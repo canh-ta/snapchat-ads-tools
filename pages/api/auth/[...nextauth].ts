@@ -1,9 +1,9 @@
 import { Profile } from "@/public/models/Account";
 import NextAuth, { AuthOptions } from "next-auth";
 
-const redirectUri = process.env.SNAPCHAT_REDIRECT_URI;
-const clientId = process.env.SNAPCHAT_CLIENT_ID;
-const clientSecret = process.env.SNAPCHAT_CLIENT_SECRET;
+const authRedirectUri = process.env.NEXTAUTH_REDIRECT_URI;
+const authClientId = process.env.NEXTAUTH_CLIENT_ID;
+const authSecret = process.env.NEXTAUTH_SECRET;
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -11,13 +11,14 @@ export const authOptions: AuthOptions = {
       id: "snapchat",
       name: "Snapchat",
       type: "oauth",
-      clientId,
-      clientSecret,
+      clientId: authClientId,
+      clientSecret: authSecret,
+      checks: "state",
       authorization: {
         url: "https://accounts.snapchat.com/login/oauth2/authorize",
         params: {
-          client_id: clientId,
-          redirect_uri: redirectUri,
+          client_id: authClientId,
+          redirect_uri: authRedirectUri,
           response_type: "code",
           scope: "snapchat-marketing-api",
         },
