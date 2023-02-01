@@ -1,4 +1,4 @@
-import { Profile } from "@/public/models/Account";
+import { Profile } from "@/models/User";
 import NextAuth, { AuthOptions } from "next-auth";
 
 const authRedirectUri = process.env.NEXTAUTH_REDIRECT_URI;
@@ -45,5 +45,14 @@ export const authOptions: AuthOptions = {
       },
     },
   ],
+  callbacks: {
+    async jwt({ token, account }) {
+      if (account?.access_token && account?.refresh_token) {
+        token.access_token = account.access_token;
+        token.refresh_token = account.refresh_token;
+      }
+      return token;
+    },
+  },
 };
 export default NextAuth(authOptions);
