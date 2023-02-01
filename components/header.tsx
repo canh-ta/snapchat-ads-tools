@@ -1,82 +1,68 @@
 import Link from "next/link";
 import { signIn, signOut, useSession } from "next-auth/react";
-import styles from "./header.module.css";
+import theme from "@/common/theme";
+
+const menu: { link: string; title: string }[] = [
+  {
+    title: "Home",
+    link: "/",
+  },
+  {
+    title: "Ad Accounts",
+    link: "/organizations/adaccounts",
+  },
+  {
+    title: "API",
+    link: "/swagger",
+  },
+  {
+    title: "Me",
+    link: "/me",
+  },
+];
 
 export default function Header() {
-  const { data: session, status } = useSession();
-  const loading = status === "loading";
+  const { data: session } = useSession();
+
+  const onSignIn = (e: any): void => {
+    e.preventDefault();
+    signIn();
+  };
+
+  const onSignOut = (e: any): void => {
+    e.preventDefault();
+    signOut();
+  };
 
   return (
     <header>
-      <noscript>
-        <style>{`.nojs-show { opacity: 1; top: 0; }`}</style>
-      </noscript>
-      <div className={styles.signedInStatus}>
-        <p
-          className={`nojs-show ${
-            !session && loading ? styles.loading : styles.loaded
-          }`}
-        >
-          {!session && (
-            <>
-              <span className={styles.notSignedInText}>
-                You are not signed in
-              </span>
-              <a
-                href={`/api/auth/signin`}
-                className={styles.buttonPrimary}
-                onClick={(e) => {
-                  e.preventDefault();
-                  signIn();
-                }}
+      <div className="flex items-center justify-between opacity-100 overflow-hidden bg-stone-300 p-2 rounded-b-lg">
+        <nav>
+          <ul>
+            {menu.map(({ link, title }) => (
+              <li
+                key={link}
+                className="bg-stone-400 hover:bg-stone-500 px-2 py-1 rounded-md inline-block mr-2"
               >
-                Sign in
-              </a>
-            </>
-          )}
-          {session?.user && (
-            <>
-              {session.user.image && (
-                <span
-                  style={{ backgroundImage: `url('${session.user.image}')` }}
-                  className={styles.avatar}
-                />
-              )}
-              <span className={styles.signedInText}>
-                <small>Signed in as</small>
-                <br />
-                <strong>{session.user.email ?? session.user.name}</strong>
-              </span>
-              <a
-                href={`/api/auth/signout`}
-                className={styles.button}
-                onClick={(e) => {
-                  e.preventDefault();
-                  signOut();
-                }}
-              >
-                Sign out
-              </a>
-            </>
-          )}
-        </p>
+                <Link href={link}>{title}</Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        {!session && (
+          <button className={theme.button.primary} onClick={onSignIn}>
+            Sign in
+          </button>
+        )}
+        {session?.user && (
+          <span className="flex items-center justify-between gap-2">
+            <i>{session.user.email ?? session.user.name}</i>
+            <button className={theme.button.primary} onClick={onSignOut}>
+              Sign out
+            </button>
+          </span>
+        )}
       </div>
-      <nav>
-        <ul className={styles.navItems}>
-          <li className={styles.navItem}>
-            <Link href="/">Home</Link>
-          </li>
-          <li className={styles.navItem}>
-            <Link href="/organizations/adaccounts">Ad Accounts</Link>
-          </li>
-          <li className={styles.navItem}>
-            <Link href="/swagger">API</Link>
-          </li>
-          <li className={styles.navItem}>
-            <Link href="/me">Me</Link>
-          </li>
-        </ul>
-      </nav>
     </header>
   );
 }

@@ -1,31 +1,55 @@
-import { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import Layout from "../../components/layout";
 import AccessDenied from "../../components/access-denied";
 import { AdAccount } from "@/models/AdAccount";
-import styles from "./adaccounts.module.css";
+import { Column } from "react-table";
+import useTable from "@/hooks/useTable";
+import theme from "@/common/theme";
 
-export default function ProtectedPage() {
+const organization_id = "b16eb6ba-1631-40cc-8317-ac46933690b5";
+
+export default function AdAccountsPage() {
   const { data: session } = useSession();
-  const [orgID, setOrgID] = useState("b16eb6ba-1631-40cc-8317-ac46933690b5");
+  const [isLoading, setLoading] = useState(false);
   const [accounts, setAccounts] = useState<AdAccount[]>([]);
+  const columns: Column<AdAccount>[] = useMemo(
+    () => [
+      { Header: "ID", accessor: "id" },
+      { Header: "Name", accessor: "name" },
+      { Header: "Status", accessor: "status" },
+      { Header: "Created At", accessor: "created_at" },
+      { Header: "Updated At", accessor: "updated_at" },
+      { Header: "Currency", accessor: "currency" },
+      { Header: "Timezone", accessor: "timezone" },
+    ],
+    []
+  );
 
   useEffect(() => {
-    const fetchData = async () => {
-      const res = await fetch(`/api/organizations/${orgID}/adaccounts`);
-      const response = await res.json();
-      if (response?.adaccounts) {
+    setLoading(true);
+    fetch(`/api/organizations/${organization_id}/adaccounts`)
+      .then((res) => res.json())
+      .then((data) => {
         setAccounts(
-          response.adaccounts.map(
-            ({ adaccount }: any) => adaccount as AdAccount
-          )
+          data.adaccounts.map(({ adaccount }: any) => adaccount as AdAccount)
         );
-      }
-    };
-    if (session) {
-      fetchData();
-    }
-  }, [orgID, session]);
+        setLoading(false);
+      });
+  }, []);
+
+  const { renderTable, selectedFlatRows } = useTable({
+    columns,
+    data: accounts,
+  });
+
+  const onCreateCampaign = () => {
+    alert(
+      `Create campaign for ${selectedFlatRows
+        .map((account: AdAccount) => account.name)
+        .join(", ")}`
+    );
+  };
 
   if (!session) {
     return (
@@ -37,33 +61,23 @@ export default function ProtectedPage() {
 
   return (
     <Layout>
-      <h1>Ad Accounts</h1>
-      <p>Organizations ID: {orgID}</p>
-      <p>Totals: {accounts.length}</p>
-      <table className={styles.table}>
-        <tr>
-          <th className={styles.th}>No.</th>
-          <th className={styles.th}>ID</th>
-          <th className={styles.th}>Name</th>
-          <th className={styles.th}>Status</th>
-          <th className={styles.th}>Created At</th>
-          <th className={styles.th}>Updated At</th>
-          <th className={styles.th}>Currency</th>
-          <th className={styles.th}>timezone</th>
-        </tr>
-        {accounts.map((account, index) => (
-          <tr key={account.id}>
-            <td className={styles.td}>{index + 1}</td>
-            <td className={styles.td}>{account.id}</td>
-            <td className={styles.td}>{account.name}</td>
-            <td className={styles.td}>{account.status}</td>
-            <td className={styles.td}>{account.created_at}</td>
-            <td className={styles.td}>{account.updated_at}</td>
-            <td className={styles.td}>{account.currency}</td>
-            <td className={styles.td}>{account.timezone}</td>
-          </tr>
-        ))}
-      </table>
+      <div>
+        {isLoading
+          ? "Loading..."
+          : `OrgID: ${organization_id} has${accounts.length} accounts.`}
+      </div>
+      <hr />
+      <div className="flex justify-between items-center">
+        <p>
+          {`Selected: ${selectedFlatRows
+            .map((account: AdAccount) => account.name)
+            .join(", ")}`}
+        </p>
+        <button className={theme.button.primary} onClick={onCreateCampaign}>
+          Create Campaigns
+        </button>
+      </div>
+      {renderTable()}
     </Layout>
   );
 }
