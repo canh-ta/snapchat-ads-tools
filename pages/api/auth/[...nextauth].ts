@@ -1,3 +1,4 @@
+import { Profile } from "@/public/models/Account";
 import NextAuth, { AuthOptions } from "next-auth";
 
 const redirectUri = process.env.SNAPCHAT_REDIRECT_URI;
@@ -25,13 +26,11 @@ export const authOptions: AuthOptions = {
         url: "https://accounts.snapchat.com/login/oauth2/access_token",
       },
       userinfo: "https://adsapi.snapchat.com/v1/me",
-      profile(me: any) {
-        console.log("Profile", me);
+      profile(response: Profile) {
         return {
-          id: me.id,
-          name: me?.display_name,
-          email: me?.email,
-          image: me?.bitmoji?.avatar_id,
+          id: response.me.id || "",
+          name: response.me.display_name || "",
+          email: response.me.email || "",
         };
       },
       style: {
