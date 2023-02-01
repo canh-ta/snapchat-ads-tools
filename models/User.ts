@@ -1,4 +1,4 @@
-export interface Account {
+export interface User {
   id?: string;
   updated_at?: string;
   created_at?: string;
@@ -14,8 +14,8 @@ export interface Account {
 }
 
 export interface Profile {
-  me: Account;
-  members: Account[];
+  me: User;
+  members: User[];
   request_status: string;
   request_id: string;
 }
