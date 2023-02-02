@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { signIn, signOut, useSession } from 'next-auth/react';
-import theme from '@/common/theme';
+import themes from '@themes';
 
 const menu: { link: string; title: string }[] = [
   {
@@ -50,14 +50,14 @@ export default function Header() {
           </ul>
         </nav>
         {!session && (
-          <button className={theme.button.primary} onClick={onSignIn}>
+          <button className={themes.button.primary} onClick={onSignIn}>
             Sign in
           </button>
         )}
         {session?.user && (
           <span className="flex items-center justify-between gap-2">
             <i>{session.user.email ?? session.user.name}</i>
-            <button className={theme.button.primary} onClick={onSignOut}>
+            <button className={themes.button.primary} onClick={onSignOut}>
               Sign out
             </button>
           </span>

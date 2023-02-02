@@ -1,5 +1,5 @@
-import { Profile } from '@/models/User';
 import NextAuth, { AuthOptions } from 'next-auth';
+import { Profile } from '@models/User';
 
 const authRedirectUri = process.env.NEXTAUTH_REDIRECT_URI;
 const authClientId = process.env.NEXTAUTH_CLIENT_ID;

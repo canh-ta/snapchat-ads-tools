@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import Layout from '../../components/layout';
-import AccessDenied from '../../components/access-denied';
-import { AdAccount } from '@/models/AdAccount';
 import { Column } from 'react-table';
-import useTable from '@/hooks/useTable';
-import theme from '@/common/theme';
+import Layout from '@components/layout';
+import AccessDenied from '@components/access-denied';
+import { AdAccount } from '@models/AdAccount';
+import useTable from '@hooks/useTable';
+import themes from '@themes';
 
 const organization_id = 'b16eb6ba-1631-40cc-8317-ac46933690b5';
 
@@ -82,7 +82,7 @@ export default function AdAccountsPage() {
             .map((account: AdAccount) => account.name)
             .join(', ')}`}
         </p>
-        <button className={theme.button.primary} onClick={onCreateCampaign}>
+        <button className={themes.button.primary} onClick={onCreateCampaign}>
           Create Campaigns
         </button>
       </div>

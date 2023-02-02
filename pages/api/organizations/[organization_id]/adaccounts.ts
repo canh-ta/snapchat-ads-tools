@@ -1,6 +1,6 @@
-import { getHeaders } from '@/libs/headers';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getToken } from 'next-auth/jwt';
+import { getHeaders } from '@libs/headers';
 
 export default async function handler(
   req: NextApiRequest,
