@@ -36,8 +36,7 @@ export const authOptions: AuthOptions = {
       },
       style: {
         logo: 'https://accounts.snapchat.com/accounts/static/images/ghost/snapchat-app-icon.svg',
-        logoDark:
-          'https://accounts.snapchat.com/accounts/static/images/ghost/snapchat-app-icon.svg',
+        logoDark: 'https://accounts.snapchat.com/accounts/static/images/ghost/snapchat-app-icon.svg',
         bg: '#fffc00',
         text: '#16191c',
         bgDark: '#fffc00',

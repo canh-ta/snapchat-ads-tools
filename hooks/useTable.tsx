@@ -1,12 +1,7 @@
 /* eslint-disable react/jsx-key */
-import {
-  ClassAttributes,
-  HTMLAttributes,
-  HTMLProps,
-  useEffect,
-  useRef,
-} from 'react';
-import { useTable as useReactTable, useRowSelect, Column } from 'react-table';
+import themes from '@configs/theme';
+import { ClassAttributes, HTMLAttributes, HTMLProps, useEffect, useRef } from 'react';
+import { useTable as useReactTable, useRowSelect, useSortBy, usePagination, Column, Hooks } from 'react-table';
 
 function IndeterminateCheckbox({
   indeterminate,
@@ -21,118 +16,130 @@ function IndeterminateCheckbox({
     }
   }, [indeterminate, rest.checked]);
 
-  return (
-    <input
-      type="checkbox"
-      ref={ref}
-      className={className + ' cursor-pointer'}
-      {...rest}
-    />
-  );
+  return <input type="checkbox" ref={ref} className={className + ' cursor-pointer'} {...rest} />;
 }
 
-function useTable<T extends object>({
-  columns,
-  data,
-}: {
-  columns: Column<T>[];
-  data: T[];
-}) {
+const pageSizeOptions = [10, 20, 50, 100];
+
+function useTable<T extends object>({ columns, data }: { columns: Column<T>[]; data: T[] }) {
+  const selectHook = (hooks: Hooks<T>) => {
+    hooks.visibleColumns.push((columns) => [
+      {
+        id: 'selection',
+        Header: ({ getToggleAllRowsSelectedProps }: any) => (
+          <div className="flex justify-center">
+            <IndeterminateCheckbox {...getToggleAllRowsSelectedProps()} />
+          </div>
+        ),
+        Cell: ({ row }: any) => (
+          <div className="flex justify-center">
+            <IndeterminateCheckbox {...row.getToggleRowSelectedProps()} />
+          </div>
+        ),
+      },
+      ...columns,
+    ]);
+  };
+
+  const tableInstance = useReactTable({ columns, data }, useSortBy, usePagination, useRowSelect, selectHook) as any;
+
   const {
+    page,
+    canNextPage,
+    canPreviousPage,
     getTableProps,
     getTableBodyProps,
+    gotoPage,
     headerGroups,
-    rows,
+    nextPage,
     prepareRow,
+    pageOptions,
+    previousPage,
+    setPageSize,
     selectedFlatRows,
-    state: { selectedRowIds },
-  } = useReactTable(
-    {
-      columns,
-      data,
-    },
-    useRowSelect,
-    (hooks) => {
-      hooks.visibleColumns.push((columns) => [
-        // Let's make a column for selection
-        {
-          id: 'selection',
-          // The header can use the table's getToggleAllRowsSelectedProps method
-          // to render a checkbox
-          Header: ({ getToggleAllRowsSelectedProps }: any) => (
-            <div>
-              <IndeterminateCheckbox {...getToggleAllRowsSelectedProps()} />
-            </div>
-          ),
-          // The cell can use the individual row's getToggleRowSelectedProps method
-          // to the render a checkbox
-          Cell: ({ row }: any) => (
-            <div>
-              <IndeterminateCheckbox {...row.getToggleRowSelectedProps()} />
-            </div>
-          ),
-        },
-        ...columns,
-      ]);
-    },
-  ) as any;
+    state: { selectedRowIds, pageIndex, pageSize },
+  } = tableInstance;
 
-  // Render the UI for your table
   return {
-    selectedFlatRows: selectedFlatRows.map(
-      (d: { original: any }) => d.original,
-    ),
+    selectedFlatRows: selectedFlatRows.map((d: { original: any }) => d.original),
     selectedRowIds,
     renderTable: () => (
-      <table {...getTableProps()}>
-        <thead>
-          {headerGroups.map(
-            (headerGroup: {
-              getHeaderGroupProps: () => JSX.IntrinsicAttributes &
-                ClassAttributes<HTMLTableRowElement> &
-                HTMLAttributes<HTMLTableRowElement>;
-              headers: any[];
-            }) => (
-              <tr {...headerGroup.getHeaderGroupProps()}>
-                {headerGroup.headers.map((column: any) => (
-                  <th
-                    className="border p-1 text-sm"
-                    {...column.getHeaderProps()}
-                  >
-                    {column.render('Header')}
-                  </th>
-                ))}
-              </tr>
-            ),
-          )}
-        </thead>
-        <tbody {...getTableBodyProps()}>
-          {rows.map(
-            (row: {
-              getRowProps: () => JSX.IntrinsicAttributes &
-                ClassAttributes<HTMLTableRowElement> &
-                HTMLAttributes<HTMLTableRowElement>;
-              cells: any[];
-            }) => {
+      <div className="w-full">
+        <table className="w-full" {...getTableProps()}>
+          <thead>
+            {headerGroups.map(
+              (headerGroup: {
+                getHeaderGroupProps: () => JSX.IntrinsicAttributes &
+                  ClassAttributes<HTMLTableRowElement> &
+                  HTMLAttributes<HTMLTableRowElement>;
+                headers: any[];
+              }) => (
+                <tr {...headerGroup.getHeaderGroupProps()}>
+                  {headerGroup.headers.map((column: any) => (
+                    <th
+                      className="border p-1 text-sm bg-stone-300"
+                      {...column.getHeaderProps(column.getSortByToggleProps())}
+                    >
+                      {column.render('Header')}
+                      <span>{column.isSorted ? (column.isSortedDesc ? ' 🔽' : ' 🔼') : ''}</span>
+                    </th>
+                  ))}
+                </tr>
+              ),
+            )}
+          </thead>
+          <tbody {...getTableBodyProps()}>
+            {page.map((row: any) => {
               prepareRow(row);
               return (
                 <tr {...row.getRowProps()}>
-                  {row.cells.map((cell) => {
+                  {row.cells.map((cell: any) => {
                     return (
-                      <td
-                        className="border px-2 py-1 text-sm"
-                        {...cell.getCellProps()}
-                      >
+                      <td className="border px-2 py-1 text-sm" {...cell.getCellProps()}>
                         {cell.render('Cell')}
                       </td>
                     );
                   })}
                 </tr>
               );
-            },
-          )}
-        </tbody>
-      </table>
+            })}
+          </tbody>
+        </table>
+        <div className="p-2 flex justify-between items-center bg-stone-300">
+          <div className="flex items-center gap-2">
+            <button className={themes.button.default} onClick={() => previousPage()} disabled={!canPreviousPage}>
+              Previous Page
+            </button>
+            <button className={themes.button.default} onClick={() => nextPage()} disabled={!canNextPage}>
+              Next Page
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>Page</span>
+            <input
+              type="number"
+              defaultValue={pageIndex + 1 || 1}
+              onChange={(e) => {
+                const page = e.target.value ? Number(e.target.value) - 1 : 0;
+                gotoPage(page);
+              }}
+            />
+            <span>{`of ${pageOptions.length}`}</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+              }}
+            >
+              {pageSizeOptions.map((pageSize: number) => (
+                <option key={pageSize} value={pageSize}>
+                  {`Show ${pageSize} items`}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
     ),
   };
 }

@@ -2,10 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { getToken } from 'next-auth/jwt';
 import { getHeaders } from '@libs/headers';
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse,
-) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { ad_account_id } = req.query;
   const token = await getToken({ req });
 

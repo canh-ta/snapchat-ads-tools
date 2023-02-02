@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { signIn, signOut, useSession } from 'next-auth/react';
-import themes from '@themes';
+import themes from '@configs/theme';
 
 const menu: { link: string; title: string }[] = [
   {
@@ -40,10 +40,7 @@ export default function Header() {
         <nav>
           <ul>
             {menu.map(({ link, title }) => (
-              <li
-                key={link}
-                className="bg-stone-400 hover:bg-stone-500 px-2 py-1 rounded-md inline-block mr-2"
-              >
+              <li key={link} className="bg-stone-400 hover:bg-stone-500 px-2 py-1 rounded-md inline-block mr-2">
                 <Link href={link}>{title}</Link>
               </li>
             ))}
