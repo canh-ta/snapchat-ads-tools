@@ -3,11 +3,18 @@ import Layout from '@components/layout';
 export default function IndexPage() {
   return (
     <Layout>
-      <h1>NextAuth.js Example</h1>
-      <p>
-        This is an example site to demonstrate how to use <a href="https://next-auth.js.org">NextAuth.js</a> for
-        authentication.
-      </p>
+      <div className="hero min-h-screen bg-base-200">
+        <div className="hero-content text-center">
+          <div className="max-w-md">
+            <h1 className="text-5xl font-bold">Hello there</h1>
+            <p className="py-6">
+              Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda excepturi exercitationem quasi. In
+              deleniti eaque aut repudiandae et a id nisi.
+            </p>
+            <button className="btn btn-primary">Get Started</button>
+          </div>
+        </div>
+      </div>
     </Layout>
   );
 }
