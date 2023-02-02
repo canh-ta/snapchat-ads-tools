@@ -1,23 +1,23 @@
-import Link from "next/link";
-import { signIn, signOut, useSession } from "next-auth/react";
-import theme from "@/common/theme";
+import Link from 'next/link';
+import { signIn, signOut, useSession } from 'next-auth/react';
+import theme from '@/common/theme';
 
 const menu: { link: string; title: string }[] = [
   {
-    title: "Home",
-    link: "/",
+    title: 'Home',
+    link: '/',
   },
   {
-    title: "Ad Accounts",
-    link: "/organizations/adaccounts",
+    title: 'Ad Accounts',
+    link: '/organizations/adaccounts',
   },
   {
-    title: "API",
-    link: "/swagger",
+    title: 'API',
+    link: '/swagger',
   },
   {
-    title: "Me",
-    link: "/me",
+    title: 'Me',
+    link: '/me',
   },
 ];
 

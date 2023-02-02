@@ -6,7 +6,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  const { organization_id } = req.query;
+  const { ad_account_id } = req.query;
   const token = await getToken({ req });
 
   if (!token) {
@@ -14,14 +14,11 @@ export default async function handler(
   }
 
   const headers = getHeaders(token);
-  const requestOptions = {
-    method: 'GET',
-    headers,
-  };
+  const requestOptions = { method: 'GET', headers };
 
   try {
     const response = await fetch(
-      `https://adsapi.snapchat.com/v1/organizations/${organization_id}/adaccounts`,
+      `https://adsapi.snapchat.com/v1/adaccounts/${ad_account_id}/campaigns`,
       requestOptions,
     );
     const result = await response.json();

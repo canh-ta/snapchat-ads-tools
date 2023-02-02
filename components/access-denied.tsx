@@ -1,5 +1,5 @@
-import { signIn } from "next-auth/react";
-import Link from "next/link";
+import { signIn } from 'next-auth/react';
+import Link from 'next/link';
 
 export default function AccessDenied() {
   return (
