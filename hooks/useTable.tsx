@@ -5,18 +5,18 @@ import {
   HTMLProps,
   useEffect,
   useRef,
-} from "react";
-import { useTable as useReactTable, useRowSelect, Column } from "react-table";
+} from 'react';
+import { useTable as useReactTable, useRowSelect, Column } from 'react-table';
 
 function IndeterminateCheckbox({
   indeterminate,
-  className = "",
+  className = '',
   ...rest
 }: { indeterminate?: boolean } & HTMLProps<HTMLInputElement>) {
   const ref = useRef<HTMLInputElement>(null!);
 
   useEffect(() => {
-    if (typeof indeterminate === "boolean") {
+    if (typeof indeterminate === 'boolean') {
       ref.current.indeterminate = !rest.checked && indeterminate;
     }
   }, [indeterminate, rest.checked]);
@@ -25,7 +25,7 @@ function IndeterminateCheckbox({
     <input
       type="checkbox"
       ref={ref}
-      className={className + " cursor-pointer"}
+      className={className + ' cursor-pointer'}
       {...rest}
     />
   );
@@ -56,7 +56,7 @@ function useTable<T extends object>({
       hooks.visibleColumns.push((columns) => [
         // Let's make a column for selection
         {
-          id: "selection",
+          id: 'selection',
           // The header can use the table's getToggleAllRowsSelectedProps method
           // to render a checkbox
           Header: ({ getToggleAllRowsSelectedProps }: any) => (
@@ -74,13 +74,13 @@ function useTable<T extends object>({
         },
         ...columns,
       ]);
-    }
+    },
   ) as any;
 
   // Render the UI for your table
   return {
     selectedFlatRows: selectedFlatRows.map(
-      (d: { original: any }) => d.original
+      (d: { original: any }) => d.original,
     ),
     selectedRowIds,
     renderTable: () => (
@@ -99,11 +99,11 @@ function useTable<T extends object>({
                     className="border p-1 text-sm"
                     {...column.getHeaderProps()}
                   >
-                    {column.render("Header")}
+                    {column.render('Header')}
                   </th>
                 ))}
               </tr>
-            )
+            ),
           )}
         </thead>
         <tbody {...getTableBodyProps()}>
@@ -123,13 +123,13 @@ function useTable<T extends object>({
                         className="border px-2 py-1 text-sm"
                         {...cell.getCellProps()}
                       >
-                        {cell.render("Cell")}
+                        {cell.render('Cell')}
                       </td>
                     );
                   })}
                 </tr>
               );
-            }
+            },
           )}
         </tbody>
       </table>

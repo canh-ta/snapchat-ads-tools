@@ -1,19 +1,19 @@
 enum BillingType {
-  REVOLVING = "REVOLVING",
-  IO = "IO",
+  REVOLVING = 'REVOLVING',
+  IO = 'IO',
 }
 
 enum Currency {
-  AUD = "AUD",
-  CAD = "CAD",
-  EUR = "EUR",
-  GBP = "GBP",
-  USD = "USD",
+  AUD = 'AUD',
+  CAD = 'CAD',
+  EUR = 'EUR',
+  GBP = 'GBP',
+  USD = 'USD',
 }
 
 enum AccountType {
-  DIRECT = "DIRECT",
-  PARTNER = "PARTNER",
+  DIRECT = 'DIRECT',
+  PARTNER = 'PARTNER',
 }
 
 export interface AdAccount {
