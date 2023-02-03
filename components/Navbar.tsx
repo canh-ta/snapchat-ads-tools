@@ -1,7 +1,14 @@
 import Link from 'next/link';
 import { signIn, signOut, useSession } from 'next-auth/react';
+import { useMemo } from 'react';
 
-const menu: { link: string; title: string }[] = [
+interface Link {
+  title: string;
+  link?: string;
+  subLinks?: Link[];
+}
+
+const menu: Link[] = [
   {
     title: 'Home',
     link: '/',
@@ -9,6 +16,19 @@ const menu: { link: string; title: string }[] = [
   {
     title: 'Ad Accounts',
     link: '/organizations/adaccounts',
+  },
+  {
+    title: 'Campaigns',
+    subLinks: [
+      {
+        link: '/campaigns',
+        title: 'View All',
+      },
+      {
+        link: '/campaigns/create',
+        title: 'Create',
+      },
+    ],
   },
   {
     title: 'API',
@@ -33,6 +53,47 @@ export default function Header() {
     signOut();
   };
 
+  const renderLinks = useMemo(
+    () =>
+      menu.map(({ link, title, subLinks }) => {
+        if (link) {
+          return (
+            <li key={link}>
+              <Link href={link}>{title}</Link>
+            </li>
+          );
+        }
+
+        if (subLinks?.length) {
+          return (
+            <li key={title} tabIndex={0}>
+              <a className="flex justify-between">
+                {title}
+                <svg
+                  className="fill-current"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" />
+                </svg>
+              </a>
+              <ul className="z-10	bg-neutral text-neutral-content">
+                {subLinks.map((subLink) => (
+                  <li key={subLink.link}>
+                    <Link href={subLink.link || ''}>{subLink.title}</Link>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          );
+        }
+        return <li key={title}></li>;
+      }),
+    [],
+  );
+
   return (
     <div className="navbar bg-neutral text-neutral-content">
       <div className="navbar-start">
@@ -49,23 +110,13 @@ export default function Header() {
             </svg>
           </label>
           <ul tabIndex={0} className="menu menu-compact dropdown-content mt-3 p-2 shadow bg-base-100 rounded-box w-52">
-            {menu.map(({ link, title }) => (
-              <li key={link}>
-                <Link href={link}>{title}</Link>
-              </li>
-            ))}
+            {renderLinks}
           </ul>
         </div>
         <a className="btn btn-ghost normal-case text-xl">Crishub</a>
       </div>
       <div className="navbar-center hidden lg:flex">
-        <ul className="menu menu-horizontal px-1">
-          {menu.map(({ link, title }) => (
-            <li key={link}>
-              <Link href={link}>{title}</Link>
-            </li>
-          ))}
-        </ul>
+        <ul className="menu menu-horizontal px-1">{renderLinks}</ul>
       </div>
       <div className="navbar-end">
         {!session && (

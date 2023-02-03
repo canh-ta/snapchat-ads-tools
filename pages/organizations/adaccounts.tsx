@@ -7,6 +7,7 @@ import AccessDenied from '@components/access-denied';
 import { AdAccount } from '@models/AdAccount';
 import useTable from '@hooks/useTable';
 import { Campaign } from '@models/Campaign';
+import CampaignModal from '@components/CampaignModal';
 
 const organization_id = 'b16eb6ba-1631-40cc-8317-ac46933690b5';
 
@@ -18,10 +19,12 @@ export default function AdAccountsPage() {
     loading: boolean;
     ad_account_id: string | null;
     campaigns: Campaign[];
+    modalID: string;
   }>({
     loading: false,
     ad_account_id: null,
     campaigns: [],
+    modalID: 'view-campaign-modal',
   });
 
   useEffect(() => {
@@ -129,52 +132,8 @@ export default function AdAccountsPage() {
       <div className="m-2">
         {isLoading ? 'Loading...' : `OrgID: ${organization_id} has ${accounts.length} accounts.`}
       </div>
-      <hr />
-      <div className="flex justify-between items-center m-2">
-        <p>{`Selected: ${selectedFlatRows.map((account: AdAccount) => account.name).join(', ')}`}</p>
-        <a href="#view-campaign" className="btn btn-sm">
-          Create Campaigns
-        </a>
-      </div>
       <div className="w-full">{renderTable()}</div>
-
-      <input type="checkbox" id="view-campaign-modal" className="modal-toggle" />
-      <div className="modal">
-        <div className="modal-box">
-          <h3 className="font-bold text-lg">Campaigns (total: {campaignCtx.campaigns.length})</h3>
-          <div className="pt-4">
-            {campaignCtx.loading ? (
-              'Loading...'
-            ) : (
-              <table className="table table-compact w-full">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Status</th>
-                    <th>Start time</th>
-                    <th>End time</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {campaignCtx.campaigns.map((campaign) => (
-                    <tr key={campaign.id}>
-                      <th>{campaign.name}</th>
-                      <th>{campaign.status}</th>
-                      <th>{campaign.start_time ? DateTime.fromISO(campaign.start_time).toFormat('ff') : ''}</th>
-                      <th>{campaign.end_time ? DateTime.fromISO(campaign.end_time).toFormat('ff') : ''}</th>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-          <div className="modal-action">
-            <label htmlFor="view-campaign-modal" className="btn">
-              Yay!
-            </label>
-          </div>
-        </div>
-      </div>
+      <CampaignModal modalID={campaignCtx.modalID} campaigns={campaignCtx.campaigns} loading={campaignCtx.loading} />
     </Layout>
   );
 }
