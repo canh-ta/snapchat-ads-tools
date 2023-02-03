@@ -1,5 +1,4 @@
 /* eslint-disable react/jsx-key */
-import themes from '@configs/theme';
 import { ClassAttributes, HTMLAttributes, HTMLProps, useEffect, useRef } from 'react';
 import { useTable as useReactTable, useRowSelect, useSortBy, usePagination, Column, Hooks } from 'react-table';
 
@@ -16,7 +15,7 @@ function IndeterminateCheckbox({
     }
   }, [indeterminate, rest.checked]);
 
-  return <input type="checkbox" ref={ref} className={className + ' cursor-pointer'} {...rest} />;
+  return <input type="checkbox" ref={ref} className={className + ' checkbox'} {...rest} />;
 }
 
 const pageSizeOptions = [10, 20, 50, 100];
@@ -49,11 +48,9 @@ function useTable<T extends object>({ columns, data }: { columns: Column<T>[]; d
     canPreviousPage,
     getTableProps,
     getTableBodyProps,
-    gotoPage,
     headerGroups,
     nextPage,
     prepareRow,
-    pageOptions,
     previousPage,
     setPageSize,
     selectedFlatRows,
@@ -64,8 +61,8 @@ function useTable<T extends object>({ columns, data }: { columns: Column<T>[]; d
     selectedFlatRows: selectedFlatRows.map((d: { original: any }) => d.original),
     selectedRowIds,
     renderTable: () => (
-      <div className="w-full">
-        <table className="w-full" {...getTableProps()}>
+      <div className="overflow-x-auto w-full">
+        <table className="table table-compact table-zebra w-full" {...getTableProps()}>
           <thead>
             {headerGroups.map(
               (headerGroup: {
@@ -76,10 +73,7 @@ function useTable<T extends object>({ columns, data }: { columns: Column<T>[]; d
               }) => (
                 <tr {...headerGroup.getHeaderGroupProps()}>
                   {headerGroup.headers.map((column: any) => (
-                    <th
-                      className="border p-1 text-sm bg-stone-300"
-                      {...column.getHeaderProps(column.getSortByToggleProps())}
-                    >
+                    <th {...column.getHeaderProps(column.getSortByToggleProps())}>
                       {column.render('Header')}
                       <span>{column.isSorted ? (column.isSortedDesc ? ' 🔽' : ' 🔼') : ''}</span>
                     </th>
@@ -94,50 +88,36 @@ function useTable<T extends object>({ columns, data }: { columns: Column<T>[]; d
               return (
                 <tr {...row.getRowProps()}>
                   {row.cells.map((cell: any) => {
-                    return (
-                      <td className="border px-2 py-1 text-sm" {...cell.getCellProps()}>
-                        {cell.render('Cell')}
-                      </td>
-                    );
+                    return <td {...cell.getCellProps()}>{cell.render('Cell')}</td>;
                   })}
                 </tr>
               );
             })}
           </tbody>
         </table>
-        <div className="p-2 flex justify-between items-center bg-stone-300">
-          <div className="flex items-center gap-2">
-            <button className={themes.button.default} onClick={() => previousPage()} disabled={!canPreviousPage}>
-              Previous Page
+        <div className="p-4 flex gap-2 justify-end bg-stone-300">
+          <div className="btn-group">
+            <button className="btn btn-sm" onClick={previousPage} disabled={!canPreviousPage}>
+              «
             </button>
-            <button className={themes.button.default} onClick={() => nextPage()} disabled={!canNextPage}>
-              Next Page
+            <button className="btn btn-sm">Page {pageIndex + 1}</button>
+            <button className="btn btn-sm" onClick={nextPage} disabled={!canNextPage}>
+              »
             </button>
           </div>
-          <div className="flex items-center gap-2">
-            <span>Page</span>
-            <input
-              type="number"
-              defaultValue={pageIndex + 1 || 1}
-              onChange={(e) => {
-                const page = e.target.value ? Number(e.target.value) - 1 : 0;
-                gotoPage(page);
-              }}
-            />
-            <span>{`of ${pageOptions.length}`}</span>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-              }}
-            >
-              {pageSizeOptions.map((pageSize: number) => (
-                <option key={pageSize} value={pageSize}>
-                  {`Show ${pageSize} items`}
-                </option>
-              ))}
-            </select>
-          </div>
+          <select
+            className="select select-sm"
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+            }}
+          >
+            {pageSizeOptions.map((pageSize: number) => (
+              <option key={pageSize} value={pageSize}>
+                {`Show ${pageSize} items`}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
     ),

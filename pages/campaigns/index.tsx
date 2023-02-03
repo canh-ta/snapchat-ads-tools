@@ -1,6 +1,6 @@
 import Layout from '@components/layout';
 
-export default function IndexPage() {
+export default function CampaignsPage() {
   return (
     <Layout>
       <div className="hero min-h-screen bg-base-200">
