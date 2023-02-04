@@ -2,11 +2,13 @@ import _ from 'lodash';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getToken } from 'next-auth/jwt';
 import { getHeaders } from '@libs/headers';
+import { CampaignCreateDTO } from '@models/Campaign';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { name, ad_account_id, status, start_time } = req.body;
-  const token = await getToken({ req });
+  const { name, ad_account_id, status, start_time, objective, daily_budget_micro, end_time, lifetime_spend_cap_micro } =
+    req.body as CampaignCreateDTO;
 
+  const token = await getToken({ req });
   if (!token) {
     return res.status(403);
   }
@@ -14,7 +16,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const headers = getHeaders(token);
     const body = JSON.stringify({
-      campaigns: [{ name, ad_account_id, status, start_time }],
+      campaigns: [
+        { name, ad_account_id, status, start_time, objective, daily_budget_micro, end_time, lifetime_spend_cap_micro },
+      ],
     });
     const requestOptions = { method: 'POST', headers, body, redirect: 'follow' };
     const response = await fetch(
