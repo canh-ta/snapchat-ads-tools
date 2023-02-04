@@ -1,10 +1,10 @@
 import React from 'react';
 const { DateTime } = require('luxon');
-import { Campaign } from '@models/Campaign';
+import { CampaignDTO } from '@models/Campaign';
 
 interface Props {
   modalID: string;
-  campaigns: Campaign[];
+  campaigns: CampaignDTO[];
   loading: boolean;
 }
 const CampaignModal = ({ modalID, campaigns, loading }: Props) => {

@@ -1,38 +1,25 @@
-enum BillingType {
-  REVOLVING = 'REVOLVING',
-  IO = 'IO',
-}
+import { EAccountType, EBillingType, ECurrency, EStatus } from './enums';
 
-enum Currency {
-  AUD = 'AUD',
-  CAD = 'CAD',
-  EUR = 'EUR',
-  GBP = 'GBP',
-  USD = 'USD',
-}
-
-enum AccountType {
-  DIRECT = 'DIRECT',
-  PARTNER = 'PARTNER',
-}
-
-export interface AdAccount {
-  id: string;
-  updated_at: string;
-  created_at: string;
+export interface AdAccountCreateDTO {
+  advertiser: string; //Name of the Advertiser
+  currency: ECurrency;
+  funding_source_ids: string[]; // Array of Funding Source IDs
+  billing_type: EBillingType;
   name: string;
-  type: AccountType;
-  status: string;
   organization_id: string;
-  funding_source_ids: string[];
-  currency: Currency;
+  test?: boolean; //Indicates Ad Account is a test ad account, test ad accounts can never serve live ads
   timezone: string;
-  advertiser_organization_id: string;
-  billing_center_id: string;
-  billing_type: BillingType;
+  type: EAccountType;
+  lifetime_spend_cap_micro?: number;
+  paying_advertiser_name?: string;
   agency_representing_client: boolean;
   client_paying_invoices: boolean;
-  regulations: {
-    restricted_delivery_signals: boolean;
-  };
+  status: EStatus;
+}
+
+export interface AdAccountDTO extends AdAccountCreateDTO {
+  id: string;
+  updated_at?: string;
+  created_at?: string;
+  delivery_status?: string;
 }

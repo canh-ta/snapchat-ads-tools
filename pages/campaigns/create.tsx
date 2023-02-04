@@ -4,14 +4,14 @@ import { useSession } from 'next-auth/react';
 import { Column } from 'react-table';
 import Layout from '@components/layout';
 import AccessDenied from '@components/AccessDenied';
-import { AdAccount } from '@models/AdAccount';
+import { AdAccountDTO } from '@models/AdAccount';
 import useTable from '@hooks/useTable';
-import { Campaign, CampaignRequestDTO } from '@models/Campaign';
+import { CampaignDTO, CampaignCreateDTO } from '@models/Campaign';
 import CampaignModal from '@components/CampaignModal';
 
 const organization_id = 'b16eb6ba-1631-40cc-8317-ac46933690b5';
 
-interface AdAccountWithAction extends AdAccount {
+interface AdAccountWithAction extends AdAccountDTO {
   _status: 'text-neutral-500' | 'text-neutral-800' | 'text-red-500' | 'text-emerald-500';
   _statusMessage: string;
 }
@@ -23,7 +23,7 @@ export default function AdAccountsPage() {
   const [viewCampaignCtx, setViewCampaignCtx] = useState<{
     loading: boolean;
     ad_account_id: string | null;
-    campaigns: Campaign[];
+    campaigns: CampaignDTO[];
     modalID: string;
   }>({
     loading: false,
@@ -72,7 +72,7 @@ export default function AdAccountsPage() {
           throw new Error(response.statusText);
         })
         .then((data) => {
-          const campaigns = data.campaigns.map(({ campaign }: any) => campaign as Campaign);
+          const campaigns = data.campaigns.map(({ campaign }: any) => campaign as CampaignDTO);
           setViewCampaignCtx((pre) => ({ ...pre, campaigns, loading: false }));
         })
         .catch((error) => {
@@ -128,7 +128,7 @@ export default function AdAccountsPage() {
   const handleSubmit = async (event: any) => {
     event.preventDefault();
 
-    const ad_account_ids = selectedFlatRows.map((account: AdAccount) => account.id);
+    const ad_account_ids = selectedFlatRows.map((account: AdAccountDTO) => account.id);
 
     const name = event.target.name.value;
     const status = event.target.status.value;
@@ -162,7 +162,7 @@ export default function AdAccountsPage() {
         }),
       );
 
-      const createPayload: CampaignRequestDTO = {
+      const createPayload: CampaignCreateDTO = {
         ad_account_id,
         name,
         status,
@@ -176,7 +176,7 @@ export default function AdAccountsPage() {
     }
   };
 
-  const processCampaign = async (createData: CampaignRequestDTO): Promise<void> => {
+  const processCampaign = async (createData: CampaignCreateDTO): Promise<void> => {
     const JSONdata = JSON.stringify(createData);
     const endpoint = '/api/campaigns/create';
     const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSONdata };
@@ -205,7 +205,7 @@ export default function AdAccountsPage() {
     }
   };
 
-  const updateCampaign = async (data: CampaignRequestDTO): Promise<void> => {
+  const updateCampaign = async (data: CampaignCreateDTO): Promise<void> => {
     const JSONdata = JSON.stringify(data);
     const endpoint = '/api/campaigns/update';
     const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSONdata };
@@ -245,7 +245,7 @@ export default function AdAccountsPage() {
   };
 
   const selectedAccountNames = useMemo(
-    () => selectedFlatRows?.map((acc: AdAccount) => acc.name)?.join(', ') || '',
+    () => selectedFlatRows?.map((acc: AdAccountDTO) => acc.name)?.join(', ') || '',
     [selectedFlatRows],
   );
 
