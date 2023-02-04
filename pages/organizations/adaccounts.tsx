@@ -4,9 +4,9 @@ const { DateTime } = require('luxon');
 import { Column } from 'react-table';
 import Layout from '@components/layout';
 import AccessDenied from '@components/AccessDenied';
-import { AdAccount } from '@models/AdAccount';
+import { AdAccountDTO } from '@models/AdAccount';
 import useTable from '@hooks/useTable';
-import { Campaign } from '@models/Campaign';
+import { CampaignDTO } from '@models/Campaign';
 import CampaignModal from '@components/CampaignModal';
 
 const organization_id = 'b16eb6ba-1631-40cc-8317-ac46933690b5';
@@ -14,11 +14,11 @@ const organization_id = 'b16eb6ba-1631-40cc-8317-ac46933690b5';
 export default function AdAccountsPage() {
   const { data: session } = useSession();
   const [isLoading, setLoading] = useState(false);
-  const [accounts, setAccounts] = useState<AdAccount[]>([]);
+  const [accounts, setAccounts] = useState<AdAccountDTO[]>([]);
   const [campaignCtx, setCampaignCtx] = useState<{
     loading: boolean;
     ad_account_id: string | null;
-    campaigns: Campaign[];
+    campaigns: CampaignDTO[];
     modalID: string;
   }>({
     loading: false,
@@ -37,7 +37,7 @@ export default function AdAccountsPage() {
         throw new Error(response.statusText);
       })
       .then((data) => {
-        setAccounts(data.adaccounts.map(({ adaccount }: any) => adaccount as AdAccount));
+        setAccounts(data.adaccounts.map(({ adaccount }: any) => adaccount as AdAccountDTO));
         setLoading(false);
       })
       .catch((error) => {
@@ -58,7 +58,7 @@ export default function AdAccountsPage() {
           throw new Error(response.statusText);
         })
         .then((data) => {
-          const campaigns = data.campaigns.map(({ campaign }: any) => campaign as Campaign);
+          const campaigns = data.campaigns.map(({ campaign }: any) => campaign as CampaignDTO);
           setCampaignCtx((pre) => ({ ...pre, campaigns, loading: false }));
         })
         .catch((error) => {
@@ -71,7 +71,7 @@ export default function AdAccountsPage() {
     setCampaignCtx((pre) => ({ ...pre, ad_account_id }));
   };
 
-  const columns: Column<AdAccount>[] = useMemo(
+  const columns: Column<AdAccountDTO>[] = useMemo(
     () => [
       { Header: 'Name', accessor: 'name', sortType: 'basic' },
       {
@@ -98,7 +98,7 @@ export default function AdAccountsPage() {
       { Header: 'Timezone', accessor: 'timezone' },
       {
         Header: 'Campaigns',
-        Cell: ({ row: { original } }: { row: { original: AdAccount } }) => {
+        Cell: ({ row: { original } }: { row: { original: AdAccountDTO } }) => {
           return (
             <label
               htmlFor="view-campaign-modal"

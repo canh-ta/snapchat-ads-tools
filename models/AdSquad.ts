@@ -4,7 +4,7 @@ export interface AdTargeting {
   demographics: {
     min_age: number;
     max_age: number;
-    gender: 'FEMALE' | 'MALE';
+    gender: 'FEMALE' | 'MALE' | undefined;
   }[];
   geos: {
     country_code: string;
@@ -25,16 +25,16 @@ export interface AdSquadCreateDTO {
   end_time?: string;
   name: string;
   optimization_goal: EOptimizationGoal;
-  placement_v2: any;
+  placement_v2?: any;
   start_time?: string;
   targeting: AdTargeting;
   type: EAdSquadType;
   delivery_constraint: EDeliveryConstraint;
-  status: EStatus;
 }
 
 export interface AdSquadDTO extends AdSquadCreateDTO {
   id: string;
+  status: EStatus;
   updated_at?: string;
   created_at?: string;
   delivery_status?: string;
