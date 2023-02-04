@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Column } from 'react-table';
 import Layout from '@components/layout';
-import AccessDenied from '@components/access-denied';
+import AccessDenied from '@components/AccessDenied';
 import { AdAccount } from '@models/AdAccount';
 import useTable from '@hooks/useTable';
 import { Campaign, CampaignRequestDTO } from '@models/Campaign';
