@@ -2,11 +2,10 @@ import _ from 'lodash';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getToken } from 'next-auth/jwt';
 import { getHeaders } from '@libs/headers';
-import { CampaignCreateDTO } from '@models/Campaign';
+import { AdsCreateDTO } from '@models/Ads';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { name, ad_account_id, status, start_time, objective, daily_budget_micro, end_time, lifetime_spend_cap_micro } =
-    req.body as CampaignCreateDTO;
+  const { ad_squad_id, creative_id, name, status, type } = req.body as AdsCreateDTO;
 
   const token = await getToken({ req });
   if (!token) {
@@ -16,15 +15,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const headers = getHeaders(token);
     const body = JSON.stringify({
-      campaigns: [
-        { name, ad_account_id, status, start_time, objective, daily_budget_micro, end_time, lifetime_spend_cap_micro },
-      ],
+      ads: [{ ad_squad_id, creative_id, name, status, type }],
     });
     const requestOptions = { method: 'POST', headers, body, redirect: 'follow' };
-    const response = await fetch(
-      `https://adsapi.snapchat.com/v1/adaccounts/${ad_account_id}/campaigns`,
-      requestOptions as any,
-    );
+    const response = await fetch(`https://adsapi.snapchat.com/v1/adsquads/${ad_squad_id}/ads`, requestOptions as any);
     const result = await response.json();
     return res.status(200).json(result);
   } catch (error: any) {
