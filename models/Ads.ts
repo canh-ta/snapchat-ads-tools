@@ -1,4 +1,4 @@
-import { EAdType, EObjective, EStatus } from './enums';
+import { EAdType, EStatus } from './enums';
 
 export interface AdsCreateDTO {
   ad_squad_id: string;
@@ -8,7 +8,6 @@ export interface AdsCreateDTO {
   status: EStatus;
   type: EAdType;
   lifetime_spend_cap_micro?: number;
-  objective: EObjective;
 }
 
 export interface AdsDTO extends AdsCreateDTO {

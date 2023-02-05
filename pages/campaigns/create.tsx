@@ -8,10 +8,18 @@ import { AdAccountDTO } from '@models/AdAccount';
 import useTable from '@hooks/useTable';
 import { CampaignDTO, CampaignCreateDTO } from '@models/Campaign';
 import CampaignModal from '@components/CampaignModal';
-import { AdSquadCreateDTO } from '@models/AdSquad';
-import { EAdSquadType, EBidStrategy, EDeliveryConstraint, EObjective, EOptimizationGoal, EStatus } from '@models/enums';
-
-const organization_id = 'b16eb6ba-1631-40cc-8317-ac46933690b5';
+import { AdSquadCreateDTO, AdSquadDTO } from '@models/AdSquad';
+import { CreativeDTO } from '@models/Creative';
+import { AdsCreateDTO, AdsDTO } from '@models/Ads';
+import {
+  EAdSquadType,
+  EAdType,
+  EBidStrategy,
+  EDeliveryConstraint,
+  EObjective,
+  EOptimizationGoal,
+  EStatus,
+} from '@models/enums';
 
 interface AdAccountWithAction extends AdAccountDTO {
   _status: 'text-neutral-500' | 'text-neutral-800' | 'text-red-500' | 'text-emerald-500';
@@ -21,7 +29,10 @@ interface AdAccountWithAction extends AdAccountDTO {
 export default function AdAccountsPage() {
   const { data: session } = useSession();
   const [isLoading, setLoading] = useState(false);
+  const [isAccountLoading, setIsAccountLoading] = useState(false);
   const [accounts, setAccounts] = useState<AdAccountWithAction[]>([]);
+  const [organizationID, setOrganizationID] = useState('');
+  const [organizations, setOrganizations] = useState([]);
   const [viewCampaignCtx, setViewCampaignCtx] = useState<{
     loading: boolean;
     ad_account_id: string | null;
@@ -36,7 +47,7 @@ export default function AdAccountsPage() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/organizations/${organization_id}/adaccounts`)
+    fetch(`/api/organizations`)
       .then((response) => {
         if (response.status === 200) {
           return response.json();
@@ -44,23 +55,45 @@ export default function AdAccountsPage() {
         throw new Error(response.statusText);
       })
       .then((data) => {
-        setAccounts(
-          data.adaccounts.map(
-            ({ adaccount }: any) =>
-              ({
-                ...adaccount,
-                _status: 'text-neutral-500',
-                _statusMessage: 'No action',
-              } as AdAccountWithAction),
-          ),
-        );
+        const orgs = _.get(data, 'organizations', []);
+        setOrganizations(orgs.map(({ organization }: any) => organization));
         setLoading(false);
       })
       .catch((error) => {
         setLoading(false);
-        // alert(error.message);
+        alert(error.message);
       });
   }, []);
+
+  useEffect(() => {
+    setIsAccountLoading(true);
+    if (organizationID) {
+      fetch(`/api/organizations/${organizationID}/adaccounts`)
+        .then((response) => {
+          if (response.status === 200) {
+            return response.json();
+          }
+          throw new Error(response.statusText);
+        })
+        .then((data) => {
+          setAccounts(
+            data.adaccounts.map(
+              ({ adaccount }: any) =>
+                ({
+                  ...adaccount,
+                  _status: 'text-neutral-500',
+                  _statusMessage: 'No action',
+                } as AdAccountWithAction),
+            ),
+          );
+          setIsAccountLoading(false);
+        })
+        .catch((error) => {
+          setIsAccountLoading(false);
+          // alert(error.message);
+        });
+    }
+  }, [organizationID]);
 
   useEffect(() => {
     if (viewCampaignCtx.ad_account_id) {
@@ -85,6 +118,10 @@ export default function AdAccountsPage() {
 
   const onViewCampaign = (ad_account_id: string): void => {
     setViewCampaignCtx((pre) => ({ ...pre, ad_account_id }));
+  };
+
+  const onSelectOrg = (event: any) => {
+    setOrganizationID(event.target.value);
   };
 
   const columns: Column<AdAccountWithAction>[] = useMemo(
@@ -151,6 +188,7 @@ export default function AdAccountsPage() {
 
     // Ad Squad data
     const ad_squad_name: string = event.target.ad_squad_name.value;
+    const ad_squad_status: EStatus = event.target.ad_squad_status.value;
     const ad_squad_daily_budget_micro: number = event.target.ad_squad_daily_budget_micro.value;
     const ad_squad_delivery_constraint: EDeliveryConstraint = event.target.ad_squad_delivery_constraint.value;
     const ad_squad_start_time = event.target.ad_squad_start_time.value
@@ -164,9 +202,14 @@ export default function AdAccountsPage() {
     const ad_squad_gender: 'MALE' | 'FEMALE' | 'ALL' = event.target.ad_squad_gender.value;
     const ad_squad_os_type: 'iOS' | 'Android' = event.target.ad_squad_os_type.value;
     const ad_squad_connection_type: 'CELL' | 'WIFI' | 'ALL' = event.target.ad_squad_connection_type.value;
+    const ad_squad_placement_v2 = { config: 'AUTOMATIC' };
 
     const ad_squad_type = EAdSquadType.SNAP_ADS;
+    const ad_squad_auto_bid = true;
+    const ad_squad_target_bid = false;
     const ad_squad_bid_strategy = EBidStrategy.AUTO_BID;
+    const ad_squad_billing_event = 'IMPRESSION';
+    const ad_squad_child_ad_type = 'REMOTE_WEBPAGE';
     const ad_squad_optimization_goal = EOptimizationGoal.SWIPES;
     // TOD: Validate the form inputs
     if (ad_account_ids.length === 0) {
@@ -188,11 +231,19 @@ export default function AdAccountsPage() {
       const adSquadPayload: AdSquadCreateDTO = {
         campaign_id: '',
         name: ad_squad_name,
+        status: ad_squad_status,
+        start_time: ad_squad_start_time,
+        end_time: ad_squad_end_time,
         type: ad_squad_type,
         bid_strategy: ad_squad_bid_strategy,
+        billing_event: ad_squad_billing_event,
+        auto_bid: ad_squad_auto_bid,
+        target_bid: ad_squad_target_bid,
+        child_ad_type: ad_squad_child_ad_type,
         optimization_goal: ad_squad_optimization_goal,
         delivery_constraint: ad_squad_delivery_constraint,
         daily_budget_micro: ad_squad_daily_budget_micro,
+        placement_v2: ad_squad_placement_v2,
         targeting: {
           demographics: [
             {
@@ -204,6 +255,7 @@ export default function AdAccountsPage() {
           devices: [
             {
               os_type: ad_squad_os_type,
+              connection_type: ad_squad_connection_type === 'ALL' ? undefined : ad_squad_connection_type,
             },
           ],
           geos: [
@@ -262,6 +314,104 @@ export default function AdAccountsPage() {
     }
   };
 
+  const createAd = async (ad_squad_id: string, creative: CreativeDTO): Promise<void> => {
+    setAccounts((pre) =>
+      pre.map((preAccount) => {
+        if (preAccount.id !== creative.ad_account_id) {
+          return preAccount;
+        }
+        return {
+          ...preAccount,
+          _status: 'text-neutral-800',
+          _statusMessage: 'Creating new ads...',
+        };
+      }),
+    );
+
+    const payload: AdsCreateDTO = {
+      ad_squad_id,
+      creative_id: creative.id,
+      name: creative.headline,
+      status: EStatus.ACTIVE,
+      type: EAdType.REMOTE_WEBPAGE,
+    };
+
+    const JSONdata = JSON.stringify(payload);
+    const endpoint = '/api/ads/create';
+    const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSONdata };
+    const response = await fetch(endpoint, options);
+    const result = await response.json();
+    const createdAd: AdsDTO | null = _.get(result, 'ads[0].ad', null);
+
+    if (createdAd) {
+      setAccounts((pre) =>
+        pre.map((preAccount) => {
+          if (preAccount.id !== creative.ad_account_id) {
+            return preAccount;
+          }
+          return {
+            ...preAccount,
+            _status: 'text-neutral-500',
+            _statusMessage: 'Done',
+          };
+        }),
+      );
+    } else {
+      const _statusMessage = _.get(result, 'ads[0].sub_request_error_reason') || 'Create campaign failed';
+      setAccounts((pre) =>
+        pre.map((preAccount) => {
+          if (preAccount.id !== creative.ad_account_id) {
+            return preAccount;
+          }
+          return {
+            ...preAccount,
+            _status: 'text-red-500',
+            _statusMessage,
+          };
+        }),
+      );
+    }
+  };
+
+  const getCreatives = async (ad_account_id: string, ad_squad_id: string): Promise<void> => {
+    setAccounts((pre) =>
+      pre.map((preAccount) => {
+        if (preAccount.id !== ad_account_id) {
+          return preAccount;
+        }
+        return {
+          ...preAccount,
+          _status: 'text-neutral-800',
+          _statusMessage: 'Getting creatives...',
+        };
+      }),
+    );
+
+    const endpoint = `/api/adaccounts/${ad_account_id}/creatives`;
+    const options = { method: 'POST', headers: { 'Content-Type': 'application/json' } };
+    const response = await fetch(endpoint, options);
+    const result = await response.json();
+    const creative: CreativeDTO | null = _.get(result, 'creatives[0].creative', null);
+
+    if (creative) {
+      await createAd(ad_squad_id, creative);
+    } else {
+      const _statusMessage = _.get(result, 'creatives[0].sub_request_error_reason') || 'No creative to create ads';
+      setAccounts((pre) =>
+        pre.map((preAccount) => {
+          if (preAccount.id !== ad_account_id) {
+            return preAccount;
+          }
+          return {
+            ...preAccount,
+            _status: 'text-red-500',
+            _statusMessage,
+          };
+        }),
+      );
+    }
+  };
+
   const createAdSquad = async (ad_account_id: string, payload: AdSquadCreateDTO): Promise<void> => {
     setAccounts((pre) =>
       pre.map((preAccount) => {
@@ -282,22 +432,11 @@ export default function AdAccountsPage() {
     const response = await fetch(endpoint, options);
     const result = await response.json();
 
-    const newAdSquad = _.get(result, 'campaigns[0].campaign', null);
-    if (newAdSquad?.id) {
-      setAccounts((pre) =>
-        pre.map((preAccount) => {
-          if (preAccount.id !== ad_account_id) {
-            return preAccount;
-          }
-          return {
-            ...preAccount,
-            _status: 'text-emerald-500',
-            _statusMessage: 'New adSquad created',
-          };
-        }),
-      );
+    const newAdSquad: AdSquadDTO = _.get(result, 'adsquads[0].adsquad', null);
+    if (newAdSquad) {
+      await getCreatives(ad_account_id, newAdSquad?.id);
     } else {
-      const _statusMessage = _.get(result, 'campaigns[0].sub_request_error_reason') || 'Create adSquad failed';
+      const _statusMessage = _.get(result, 'adsquads[0].sub_request_error_reason') || 'Create adSquad failed';
 
       setAccounts((pre) =>
         pre.map((preAccount) => {
@@ -320,6 +459,11 @@ export default function AdAccountsPage() {
   );
 
   const disabledSubmit = useMemo(() => selectedFlatRows.length === 0, [selectedFlatRows]);
+
+  const selectedOrgName = useMemo(() => {
+    const selectOrg: any = organizations.find((org: any) => org.id === organizationID);
+    return selectOrg?.name || '';
+  }, [organizationID, organizations]);
 
   if (!session) {
     return (
@@ -369,7 +513,7 @@ export default function AdAccountsPage() {
           <input
             type="number"
             id="campaign_daily_budget_micro"
-            placeholder="E.g. 50000 => $50"
+            placeholder="E.g. 5 000 000 => $5"
             className="input input-bordered input-sm w-full"
           />
         </div>
@@ -378,7 +522,7 @@ export default function AdAccountsPage() {
           <input
             type="number"
             id="campaign_lifetime_spend_cap_micro"
-            placeholder="E.g. 50000 => $50"
+            placeholder="E.g. 5 000 000 => $5"
             className="input input-bordered input-sm w-full"
           />
         </div>
@@ -405,6 +549,15 @@ export default function AdAccountsPage() {
         placeholder="Ad Set Name"
         className="input input-bordered input-sm w-full"
       />
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col">
+          <span className="label label-text">Status (Required)</span>
+          <select className="select select-bordered select-sm" id="ad_squad_status">
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="PAUSED">PAUSED</option>
+          </select>
+        </div>
+      </div>
 
       <p className="text-1xl pt-4">Budget & Schedule</p>
       <div className="grid grid-cols-2 gap-4">
@@ -413,9 +566,9 @@ export default function AdAccountsPage() {
           <input
             type="number"
             id="ad_squad_daily_budget_micro"
-            placeholder="E.g. 50000 => $50"
+            placeholder="E.g. 5 000 000 => $5"
             className="input input-bordered input-sm w-full"
-            defaultValue={50000}
+            defaultValue={5000000}
           />
         </div>
         <div className="flex flex-col">
@@ -494,26 +647,44 @@ export default function AdAccountsPage() {
 
   return (
     <Layout>
-      <div className="m-2">
-        {isLoading ? 'Loading...' : `OrgID: ${organization_id} has ${accounts.length} accounts.`}
+      <div className="flex items-center justify-between gap-4 px-4 py-2">
+        <div className="text-1xl">
+          {isLoading
+            ? 'Loading...'
+            : organizationID
+            ? `Org ${selectedOrgName} has ${accounts.length} accounts.`
+            : 'Please select your organization'}
+        </div>
+        <select value={organizationID} onChange={onSelectOrg} className="select select-bordered w-full max-w-xs">
+          <option value="">Select organization</option>
+          {organizations.map((organization: any) => (
+            <option key={organization.id} value={organization.id}>
+              {organization.name}
+            </option>
+          ))}
+        </select>
       </div>
-      <div className="flex flex-col">
-        <form noValidate className="form-control grid grid-cols-2 gap-4 m-4" onSubmit={handleSubmit}>
-          {CampaignSection}
-          {AdSquadSection}
-          <div className="flex">
-            <button className="btn btn-active btn-primary" type="submit" disabled={disabledSubmit}>
-              {`Create campaigns for selected accounts`}
-            </button>
+      {organizationID?.length > 0 && (
+        <div className="flex flex-col">
+          <form noValidate className="form-control grid grid-cols-2 gap-4 m-4" onSubmit={handleSubmit}>
+            {CampaignSection}
+            {AdSquadSection}
+            <div className="flex">
+              <button className="btn btn-active btn-primary" type="submit" disabled={disabledSubmit}>
+                {`Create campaigns for selected accounts`}
+              </button>
+            </div>
+          </form>
+          <div className="w-full">
+            {isAccountLoading ? <div className="text-2xl p-4">Loading ad accounts...</div> : renderTable()}
           </div>
-        </form>
-        <div className="w-full">{renderTable()}</div>
-        <CampaignModal
-          modalID={viewCampaignCtx.modalID}
-          campaigns={viewCampaignCtx.campaigns}
-          loading={viewCampaignCtx.loading}
-        />
-      </div>
+          <CampaignModal
+            modalID={viewCampaignCtx.modalID}
+            campaigns={viewCampaignCtx.campaigns}
+            loading={viewCampaignCtx.loading}
+          />
+        </div>
+      )}
     </Layout>
   );
 }
