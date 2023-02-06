@@ -15,28 +15,19 @@ const menu: Link[] = [
   },
   {
     title: 'Ad Accounts',
-    link: '/organizations/adaccounts',
+    link: '/tools/adaccounts',
   },
   {
-    title: 'Campaigns',
-    subLinks: [
-      {
-        link: '/campaigns',
-        title: 'View All',
-      },
-      {
-        link: '/campaigns/create',
-        title: 'Create',
-      },
-    ],
+    title: 'Campaigns Tools',
+    link: '/tools/campaigns',
   },
   {
     title: 'API',
-    link: '/swagger',
+    link: '/tools/swagger',
   },
   {
     title: 'Me',
-    link: '/me',
+    link: '/tools/me',
   },
 ];
 

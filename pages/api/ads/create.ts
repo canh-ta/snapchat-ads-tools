@@ -12,16 +12,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(403);
   }
 
-  try {
-    const headers = getHeaders(token);
-    const body = JSON.stringify({
-      ads: [{ ad_squad_id, creative_id, name, status, type }],
-    });
-    const requestOptions = { method: 'POST', headers, body, redirect: 'follow' };
-    const response = await fetch(`https://adsapi.snapchat.com/v1/adsquads/${ad_squad_id}/ads`, requestOptions as any);
-    const result = await response.json();
-    return res.status(200).json(result);
-  } catch (error: any) {
-    return res.status(500).json(error);
+  if (req.method === 'POST') {
+    try {
+      const headers = getHeaders(token);
+      const body = JSON.stringify({
+        ads: [{ ad_squad_id, creative_id, name, status, type }],
+      });
+      const requestOptions = { method: 'POST', headers, body, redirect: 'follow' };
+      const response = await fetch(`https://adsapi.snapchat.com/v1/adsquads/${ad_squad_id}/ads`, requestOptions as any);
+      const result = await response.json();
+      return res.status(200).json(result);
+    } catch (error: any) {
+      return res.status(500).json(error);
+    }
+  } else {
+    return res.status(405).send('Method Not Allowed');
   }
 }

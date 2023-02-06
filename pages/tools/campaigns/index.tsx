@@ -30,7 +30,7 @@ const MILLION = 1_000_000;
 const minAgeOptions = Array.from({ length: 35 - 13 + 1 }, (_, i) => i + 13);
 const maxAgeOptions = Array.from({ length: 49 - 13 + 1 }, (_, i) => i + 13);
 
-export default function AdAccountsPage() {
+export default function CampaignPage() {
   const { data: session } = useSession();
   const [isLoading, setLoading] = useState(false);
   const [isAccountLoading, setIsAccountLoading] = useState(false);

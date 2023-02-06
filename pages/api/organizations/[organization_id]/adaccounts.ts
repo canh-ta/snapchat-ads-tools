@@ -10,20 +10,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(403);
   }
 
-  const headers = getHeaders(token);
-  const requestOptions = {
-    method: 'GET',
-    headers,
-  };
+  if (req.method === 'GET') {
+    const headers = getHeaders(token);
+    const requestOptions = {
+      method: 'GET',
+      headers,
+    };
 
-  try {
-    const response = await fetch(
-      `https://adsapi.snapchat.com/v1/organizations/${organization_id}/adaccounts`,
-      requestOptions,
-    );
-    const result = await response.json();
-    return res.status(200).json(result);
-  } catch (error) {
-    return res.status(500).json(error);
+    try {
+      const response = await fetch(
+        `https://adsapi.snapchat.com/v1/organizations/${organization_id}/adaccounts`,
+        requestOptions,
+      );
+      const result = await response.json();
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(500).json(error);
+    }
+  } else {
+    return res.status(405).send('Method Not Allowed');
   }
 }

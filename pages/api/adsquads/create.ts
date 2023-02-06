@@ -31,49 +31,53 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(403);
   }
 
-  try {
-    const headers = getHeaders(token);
-    const pixelRequestOptions = { method: 'GET', headers };
-    const pixelResponse = await fetch(
-      `https://adsapi.snapchat.com/v1/adaccounts/${ad_account_id}/pixels`,
-      pixelRequestOptions as any,
-    );
-    const pixelResult = await pixelResponse.json();
-    const pixel_id = _.get(pixelResult, 'pixels[0].pixel.id', null);
+  if (req.method === 'POST') {
+    try {
+      const headers = getHeaders(token);
+      const pixelRequestOptions = { method: 'GET', headers };
+      const pixelResponse = await fetch(
+        `https://adsapi.snapchat.com/v1/adaccounts/${ad_account_id}/pixels`,
+        pixelRequestOptions as any,
+      );
+      const pixelResult = await pixelResponse.json();
+      const pixel_id = _.get(pixelResult, 'pixels[0].pixel.id', null);
 
-    let newSquad: AdSquadCreateDTO = {
-      bid_strategy,
-      daily_budget_micro,
-      name,
-      status,
-      campaign_id,
-      type,
-      targeting,
-      billing_event,
-      bid_micro,
-      auto_bid,
-      target_bid,
-      start_time,
-      end_time,
-      optimization_goal,
-      placement_v2,
-      child_ad_type,
-      delivery_constraint,
-    };
+      let newSquad: AdSquadCreateDTO = {
+        bid_strategy,
+        daily_budget_micro,
+        name,
+        status,
+        campaign_id,
+        type,
+        targeting,
+        billing_event,
+        bid_micro,
+        auto_bid,
+        target_bid,
+        start_time,
+        end_time,
+        optimization_goal,
+        placement_v2,
+        child_ad_type,
+        delivery_constraint,
+      };
 
-    if (pixel_id) {
-      newSquad = { ...newSquad, pixel_id };
+      if (pixel_id) {
+        newSquad = { ...newSquad, pixel_id };
+      }
+
+      const body = JSON.stringify({ adsquads: [newSquad] });
+      const requestOptions = { method: 'POST', headers, body, redirect: 'follow' };
+      const response = await fetch(
+        `https://adsapi.snapchat.com/v1/campaigns/${campaign_id}/adsquads`,
+        requestOptions as any,
+      );
+      const result = await response.json();
+      return res.status(200).json(result);
+    } catch (error: any) {
+      return res.status(500).json(error);
     }
-
-    const body = JSON.stringify({ adsquads: [newSquad] });
-    const requestOptions = { method: 'POST', headers, body, redirect: 'follow' };
-    const response = await fetch(
-      `https://adsapi.snapchat.com/v1/campaigns/${campaign_id}/adsquads`,
-      requestOptions as any,
-    );
-    const result = await response.json();
-    return res.status(200).json(result);
-  } catch (error: any) {
-    return res.status(500).json(error);
+  } else {
+    return res.status(405).send('Method Not Allowed');
   }
 }
