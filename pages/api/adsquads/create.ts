@@ -23,6 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     start_time,
     auto_bid,
     target_bid,
+    ad_account_id,
   } = req.body as AdSquadCreateDTO;
 
   const token = await getToken({ req });
@@ -32,29 +33,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const headers = getHeaders(token);
-    const body = JSON.stringify({
-      adsquads: [
-        {
-          bid_strategy,
-          daily_budget_micro,
-          name,
-          status,
-          campaign_id,
-          type,
-          targeting,
-          billing_event,
-          bid_micro,
-          auto_bid,
-          target_bid,
-          start_time,
-          end_time,
-          optimization_goal,
-          placement_v2,
-          child_ad_type,
-          delivery_constraint,
-        },
-      ],
-    });
+    const pixelRequestOptions = { method: 'GET', headers };
+    const pixelResponse = await fetch(
+      `https://adsapi.snapchat.com/v1/adaccounts/${ad_account_id}/pixels`,
+      pixelRequestOptions as any,
+    );
+    const pixelResult = await pixelResponse.json();
+    const pixel_id = _.get(pixelResult, 'pixels[0].pixel.id', null);
+
+    let newSquad: AdSquadCreateDTO = {
+      bid_strategy,
+      daily_budget_micro,
+      name,
+      status,
+      campaign_id,
+      type,
+      targeting,
+      billing_event,
+      bid_micro,
+      auto_bid,
+      target_bid,
+      start_time,
+      end_time,
+      optimization_goal,
+      placement_v2,
+      child_ad_type,
+      delivery_constraint,
+    };
+
+    if (pixel_id) {
+      newSquad = { ...newSquad, pixel_id };
+    }
+
+    const body = JSON.stringify({ adsquads: [newSquad] });
     const requestOptions = { method: 'POST', headers, body, redirect: 'follow' };
     const response = await fetch(
       `https://adsapi.snapchat.com/v1/campaigns/${campaign_id}/adsquads`,

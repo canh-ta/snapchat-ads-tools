@@ -8,7 +8,7 @@ import { AdAccountDTO } from '@models/AdAccount';
 import useTable from '@hooks/useTable';
 import { CampaignDTO, CampaignCreateDTO } from '@models/Campaign';
 import CampaignModal from '@components/CampaignModal';
-import { AdSquadCreateDTO, AdSquadDTO } from '@models/AdSquad';
+import { AdSquadCreateDTO, AdSquadDTO, AdTargeting } from '@models/AdSquad';
 import { CreativeDTO } from '@models/Creative';
 import { AdsCreateDTO, AdsDTO } from '@models/Ads';
 import {
@@ -25,6 +25,10 @@ interface AdAccountWithAction extends AdAccountDTO {
   _status: 'text-neutral-500' | 'text-neutral-800' | 'text-red-500' | 'text-emerald-500';
   _statusMessage: string;
 }
+
+const MILLION = 1_000_000;
+const minAgeOptions = Array.from({ length: 35 - 13 + 1 }, (_, i) => i + 13);
+const maxAgeOptions = Array.from({ length: 49 - 13 + 1 }, (_, i) => i + 13);
 
 export default function AdAccountsPage() {
   const { data: session } = useSession();
@@ -180,16 +184,18 @@ export default function AdAccountsPage() {
       ? new Date(event.target.campaign_end_time.value).toISOString()
       : undefined;
     const campaign_daily_budget_micro = event.target.campaign_daily_budget_micro.value
-      ? Number(event.target.campaign_daily_budget_micro.value)
+      ? Number(event.target.campaign_daily_budget_micro.value) * MILLION
       : undefined;
     const campaign_lifetime_spend_cap_micro = event.target.campaign_lifetime_spend_cap_micro.value
-      ? Number(event.target.campaign_lifetime_spend_cap_micro.value)
+      ? Number(event.target.campaign_lifetime_spend_cap_micro.value) * MILLION
       : undefined;
 
     // Ad Squad data
     const ad_squad_name: string = event.target.ad_squad_name.value;
     const ad_squad_status: EStatus = event.target.ad_squad_status.value;
-    const ad_squad_daily_budget_micro: number = event.target.ad_squad_daily_budget_micro.value;
+    const ad_squad_daily_budget_micro = event.target.ad_squad_daily_budget_micro.value
+      ? Number(event.target.ad_squad_daily_budget_micro.value) * MILLION
+      : undefined;
     const ad_squad_delivery_constraint: EDeliveryConstraint = event.target.ad_squad_delivery_constraint.value;
     const ad_squad_start_time = event.target.ad_squad_start_time.value
       ? new Date(event.target.ad_squad_start_time.value).toISOString()
@@ -200,7 +206,7 @@ export default function AdAccountsPage() {
     const ad_squad_age_min_age: number = event.target.ad_squad_age_min_age.value;
     const ad_squad_age_max_age: number = event.target.ad_squad_age_max_age.value;
     const ad_squad_gender: 'MALE' | 'FEMALE' | 'ALL' = event.target.ad_squad_gender.value;
-    const ad_squad_os_type: 'iOS' | 'Android' = event.target.ad_squad_os_type.value;
+    const ad_squad_os_type: 'iOS' | 'Android' | 'ALL' = event.target.ad_squad_os_type.value;
     const ad_squad_connection_type: 'CELL' | 'WIFI' | 'ALL' = event.target.ad_squad_connection_type.value;
     const ad_squad_placement_v2 = { config: 'AUTOMATIC' };
 
@@ -228,8 +234,38 @@ export default function AdAccountsPage() {
         start_time: campaign_start_time,
       };
 
+      const targeting: AdTargeting = {
+        demographics: [
+          {
+            min_age: ad_squad_age_min_age,
+          },
+        ],
+        devices: [{}],
+        geos: [
+          {
+            country_code: 'us',
+          },
+        ],
+      };
+
+      if (ad_squad_gender !== 'ALL') {
+        targeting.demographics[0].gender = ad_squad_gender;
+      }
+
+      if (ad_squad_age_max_age < 50) {
+        targeting.demographics[0].max_age = ad_squad_age_max_age;
+      }
+
+      if (ad_squad_os_type !== 'ALL') {
+        targeting.devices[0].os_type = ad_squad_os_type;
+      }
+      if (ad_squad_connection_type !== 'ALL') {
+        targeting.devices[0].connection_type = ad_squad_connection_type;
+      }
+
       const adSquadPayload: AdSquadCreateDTO = {
         campaign_id: '',
+        ad_account_id,
         name: ad_squad_name,
         status: ad_squad_status,
         start_time: ad_squad_start_time,
@@ -244,26 +280,7 @@ export default function AdAccountsPage() {
         delivery_constraint: ad_squad_delivery_constraint,
         daily_budget_micro: ad_squad_daily_budget_micro,
         placement_v2: ad_squad_placement_v2,
-        targeting: {
-          demographics: [
-            {
-              gender: ad_squad_gender === 'ALL' ? undefined : ad_squad_gender,
-              max_age: ad_squad_age_max_age,
-              min_age: ad_squad_age_min_age,
-            },
-          ],
-          devices: [
-            {
-              os_type: ad_squad_os_type,
-              connection_type: ad_squad_connection_type === 'ALL' ? undefined : ad_squad_connection_type,
-            },
-          ],
-          geos: [
-            {
-              country_code: 'us',
-            },
-          ],
-        },
+        targeting,
       };
 
       await createCampaign(campaignPayload, adSquadPayload);
@@ -513,7 +530,7 @@ export default function AdAccountsPage() {
           <input
             type="number"
             id="campaign_daily_budget_micro"
-            placeholder="E.g. 5 000 000 => $5"
+            placeholder="No cap"
             className="input input-bordered input-sm w-full"
           />
         </div>
@@ -522,7 +539,7 @@ export default function AdAccountsPage() {
           <input
             type="number"
             id="campaign_lifetime_spend_cap_micro"
-            placeholder="E.g. 5 000 000 => $5"
+            placeholder="No cap"
             className="input input-bordered input-sm w-full"
           />
         </div>
@@ -566,9 +583,9 @@ export default function AdAccountsPage() {
           <input
             type="number"
             id="ad_squad_daily_budget_micro"
-            placeholder="E.g. 5 000 000 => $5"
+            placeholder="No cap"
             className="input input-bordered input-sm w-full"
-            defaultValue={5000000}
+            defaultValue={500}
           />
         </div>
         <div className="flex flex-col">
@@ -598,19 +615,22 @@ export default function AdAccountsPage() {
         <div className="flex-1">
           <span className="label label-text">Ages (Required)</span>
           <div className="flex items-center w-full">
-            <input
-              type="number"
-              id="ad_squad_age_min_age"
-              defaultValue={13}
-              className="input input-bordered input-sm"
-            />
+            <select className="select select-bordered select-sm" id="ad_squad_age_min_age">
+              {minAgeOptions.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
             <div className="divider-horizontal">to</div>
-            <input
-              type="number"
-              id="ad_squad_age_max_age"
-              defaultValue={50}
-              className="input input-bordered input-sm"
-            />
+            <select className="select select-bordered select-sm" id="ad_squad_age_max_age">
+              <option value={50}>{`50+`}</option>
+              {maxAgeOptions.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
         <div className="flex flex-1 flex-col">
@@ -628,9 +648,9 @@ export default function AdAccountsPage() {
         <div className="flex flex-1 flex-col">
           <span className="label label-text">Operating Systems (Required)</span>
           <select className="select select-bordered select-sm" id="ad_squad_os_type">
+            <option value="ALL">ALL</option>
             <option value="iOS">iOS</option>
             <option value="Android">Android</option>
-            <option value="ALL">ALL</option>
           </select>
         </div>
         <div className="flex flex-1 flex-col">

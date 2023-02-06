@@ -3,20 +3,21 @@ import { EAdSquadType, EBidStrategy, EDeliveryConstraint, EOptimizationGoal, ESt
 export interface AdTargeting {
   demographics: {
     min_age: number;
-    max_age: number;
-    gender: 'FEMALE' | 'MALE' | undefined;
+    max_age?: number;
+    gender?: 'FEMALE' | 'MALE';
   }[];
   geos: {
-    country_code: string;
+    country_code?: string;
   }[];
   devices: {
-    os_type: 'iOS' | 'Android';
-    connection_type: 'WIFI' | 'CELL' | undefined;
+    os_type?: 'iOS' | 'Android';
+    connection_type?: 'WIFI' | 'CELL';
   }[];
 }
 
 export interface AdSquadCreateDTO {
   campaign_id: string;
+  ad_account_id?: string;
   bid_strategy: EBidStrategy;
   bid_micro?: string; // R if BidStrategy = LOWEST_COST_WITH_MAX_BID or TARGET_COST
   billing_event: 'IMPRESSION';
@@ -35,6 +36,7 @@ export interface AdSquadCreateDTO {
   targeting: AdTargeting;
   type: EAdSquadType;
   delivery_constraint: EDeliveryConstraint;
+  pixel_id?: string;
 }
 
 export interface AdSquadDTO extends AdSquadCreateDTO {
