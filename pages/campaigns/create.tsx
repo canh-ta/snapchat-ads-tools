@@ -86,7 +86,7 @@ export default function AdAccountsPage() {
                 ({
                   ...adaccount,
                   _status: 'text-neutral-500',
-                  _statusMessage: 'No action',
+                  _statusMessage: '-- No action --',
                 } as AdAccountWithAction),
             ),
           );

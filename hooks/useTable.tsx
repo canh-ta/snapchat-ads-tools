@@ -1,5 +1,5 @@
 /* eslint-disable react/jsx-key */
-import { ClassAttributes, HTMLAttributes, HTMLProps, useEffect, useRef } from 'react';
+import { ClassAttributes, HTMLAttributes, HTMLProps, useEffect, useMemo, useRef } from 'react';
 import { useTable as useReactTable, useRowSelect, useSortBy, usePagination, Column, Hooks } from 'react-table';
 
 function IndeterminateCheckbox({
@@ -40,7 +40,22 @@ function useTable<T extends object>({ columns, data }: { columns: Column<T>[]; d
     ]);
   };
 
-  const tableInstance = useReactTable({ columns, data }, useSortBy, usePagination, useRowSelect, selectHook) as any;
+  const options = useMemo(
+    () => ({
+      columns,
+      data,
+      autoResetPage: false,
+      autoResetExpanded: false,
+      autoResetGroupBy: false,
+      autoResetSelectedRows: false,
+      autoResetSortBy: false,
+      autoResetFilters: false,
+      autoResetRowState: false,
+    }),
+    [columns, data],
+  );
+
+  const tableInstance = useReactTable(options, useSortBy, usePagination, useRowSelect, selectHook) as any;
 
   const {
     page,
