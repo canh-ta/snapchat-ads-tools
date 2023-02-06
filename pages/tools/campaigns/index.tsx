@@ -1,7 +1,8 @@
 import _ from 'lodash';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Column } from 'react-table';
+import PromisePool from '@supercharge/promise-pool';
 import Layout from '@components/layout';
 import AccessDenied from '@components/AccessDenied';
 import { AdAccountDTO } from '@models/AdAccount';
@@ -32,6 +33,8 @@ const maxAgeOptions = Array.from({ length: 49 - 13 + 1 }, (_, i) => i + 13);
 
 export default function CampaignPage() {
   const { data: session } = useSession();
+  const [synchronously, setSynchronously] = useState<'sync' | 'async'>('sync');
+  const [parallel, setParallel] = useState<number>(5);
   const [isLoading, setLoading] = useState(false);
   const [isAccountLoading, setIsAccountLoading] = useState(false);
   const [accounts, setAccounts] = useState<AdAccountWithAction[]>([]);
@@ -222,102 +225,97 @@ export default function CampaignPage() {
       return;
     }
 
-    for await (const ad_account_id of ad_account_ids) {
-      const campaignPayload: CampaignCreateDTO = {
-        ad_account_id,
-        name: campaign_name,
-        objective: campaign_objective,
-        status: campaign_status,
-        daily_budget_micro: campaign_daily_budget_micro,
-        end_time: campaign_end_time,
-        lifetime_spend_cap_micro: campaign_lifetime_spend_cap_micro,
-        start_time: campaign_start_time,
-      };
+    const targeting: AdTargeting = {
+      demographics: [{ min_age: ad_squad_age_min_age }],
+      devices: [{}],
+      geos: [{ country_code: 'us' }],
+    };
 
-      const targeting: AdTargeting = {
-        demographics: [
-          {
-            min_age: ad_squad_age_min_age,
-          },
-        ],
-        devices: [{}],
-        geos: [
-          {
-            country_code: 'us',
-          },
-        ],
-      };
+    if (ad_squad_gender !== 'ALL') {
+      targeting.demographics[0].gender = ad_squad_gender;
+    }
 
-      if (ad_squad_gender !== 'ALL') {
-        targeting.demographics[0].gender = ad_squad_gender;
+    if (ad_squad_age_max_age < 50) {
+      targeting.demographics[0].max_age = ad_squad_age_max_age;
+    }
+
+    if (ad_squad_os_type !== 'ALL') {
+      targeting.devices[0].os_type = ad_squad_os_type;
+    }
+    if (ad_squad_connection_type !== 'ALL') {
+      targeting.devices[0].connection_type = ad_squad_connection_type;
+    }
+
+    const campaignPayload: CampaignCreateDTO = {
+      ad_account_id: '',
+      name: campaign_name,
+      objective: campaign_objective,
+      status: campaign_status,
+      daily_budget_micro: campaign_daily_budget_micro,
+      end_time: campaign_end_time,
+      lifetime_spend_cap_micro: campaign_lifetime_spend_cap_micro,
+      start_time: campaign_start_time,
+    };
+
+    const adSquadPayload: AdSquadCreateDTO = {
+      campaign_id: '',
+      ad_account_id: '',
+      name: ad_squad_name,
+      status: ad_squad_status,
+      start_time: ad_squad_start_time,
+      end_time: ad_squad_end_time,
+      type: ad_squad_type,
+      bid_strategy: ad_squad_bid_strategy,
+      billing_event: ad_squad_billing_event,
+      auto_bid: ad_squad_auto_bid,
+      target_bid: ad_squad_target_bid,
+      child_ad_type: ad_squad_child_ad_type,
+      optimization_goal: ad_squad_optimization_goal,
+      delivery_constraint: ad_squad_delivery_constraint,
+      daily_budget_micro: ad_squad_daily_budget_micro,
+      placement_v2: ad_squad_placement_v2,
+      targeting,
+    };
+
+    if (synchronously === 'sync') {
+      for await (const ad_account_id of ad_account_ids) {
+        await createCampaign({ ...campaignPayload, ad_account_id }, { ...adSquadPayload, ad_account_id });
       }
-
-      if (ad_squad_age_max_age < 50) {
-        targeting.demographics[0].max_age = ad_squad_age_max_age;
-      }
-
-      if (ad_squad_os_type !== 'ALL') {
-        targeting.devices[0].os_type = ad_squad_os_type;
-      }
-      if (ad_squad_connection_type !== 'ALL') {
-        targeting.devices[0].connection_type = ad_squad_connection_type;
-      }
-
-      const adSquadPayload: AdSquadCreateDTO = {
-        campaign_id: '',
-        ad_account_id,
-        name: ad_squad_name,
-        status: ad_squad_status,
-        start_time: ad_squad_start_time,
-        end_time: ad_squad_end_time,
-        type: ad_squad_type,
-        bid_strategy: ad_squad_bid_strategy,
-        billing_event: ad_squad_billing_event,
-        auto_bid: ad_squad_auto_bid,
-        target_bid: ad_squad_target_bid,
-        child_ad_type: ad_squad_child_ad_type,
-        optimization_goal: ad_squad_optimization_goal,
-        delivery_constraint: ad_squad_delivery_constraint,
-        daily_budget_micro: ad_squad_daily_budget_micro,
-        placement_v2: ad_squad_placement_v2,
-        targeting,
-      };
-
-      await createCampaign(campaignPayload, adSquadPayload);
+    } else {
+      await PromisePool.withConcurrency(parallel)
+        .for(ad_account_ids)
+        .process(async (ad_account_id: any, index, pool) => {
+          await createCampaign({ ...campaignPayload, ad_account_id }, { ...adSquadPayload, ad_account_id });
+        });
     }
   };
 
-  const createCampaign = async (
-    campaignPayload: CampaignCreateDTO,
-    adSquadPayload: AdSquadCreateDTO,
-  ): Promise<void> => {
+  const getCreatives = useCallback(async (ad_account_id: string, ad_squad_id: string): Promise<void> => {
     setAccounts((pre) =>
       pre.map((preAccount) => {
-        if (preAccount.id !== campaignPayload.ad_account_id) {
+        if (preAccount.id !== ad_account_id) {
           return preAccount;
         }
         return {
           ...preAccount,
           _status: 'text-neutral-800',
-          _statusMessage: 'Creating new campaign...',
+          _statusMessage: 'Getting creatives...',
         };
       }),
     );
 
-    const JSONdata = JSON.stringify(campaignPayload);
-    const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSONdata };
-    const response = await fetch(`/api/adaccounts/${campaignPayload.ad_account_id}/campaigns`, options);
+    const options = { method: 'GET', headers: { 'Content-Type': 'application/json' } };
+    const response = await fetch(`/api/adaccounts/${ad_account_id}/creatives`, options);
     const result = await response.json();
-    const createdCampaign = _.get(result, 'campaigns[0].campaign', null);
+    const creative: CreativeDTO | null = _.get(result, 'creatives[0].creative', null);
 
-    if (createdCampaign?.id) {
-      await createAdSquad(campaignPayload.ad_account_id, { ...adSquadPayload, campaign_id: createdCampaign.id });
+    if (creative) {
+      await createAd(ad_squad_id, creative);
     } else {
-      const _statusMessage = _.get(result, 'campaigns[0].sub_request_error_reason') || 'Create campaign failed';
-
+      const _statusMessage = _.get(result, 'creatives[0].sub_request_error_reason') || 'No creative to create ads';
       setAccounts((pre) =>
         pre.map((preAccount) => {
-          if (preAccount.id !== campaignPayload.ad_account_id) {
+          if (preAccount.id !== ad_account_id) {
             return preAccount;
           }
           return {
@@ -328,7 +326,93 @@ export default function CampaignPage() {
         }),
       );
     }
-  };
+  }, []);
+
+  const createAdSquad = useCallback(
+    async (ad_account_id: string, payload: AdSquadCreateDTO): Promise<void> => {
+      setAccounts((pre) =>
+        pre.map((preAccount) => {
+          if (preAccount.id !== ad_account_id) {
+            return preAccount;
+          }
+          return {
+            ...preAccount,
+            _status: 'text-neutral-800',
+            _statusMessage: 'Creating new adSquad...',
+          };
+        }),
+      );
+
+      const JSONdata = JSON.stringify(payload);
+      const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSONdata };
+      const response = await fetch(`/api/campaigns/${payload.campaign_id}/adsquads`, options);
+      const result = await response.json();
+
+      const newAdSquad: AdSquadDTO = _.get(result, 'adsquads[0].adsquad', null);
+      if (newAdSquad) {
+        await getCreatives(ad_account_id, newAdSquad?.id);
+      } else {
+        const _statusMessage = _.get(result, 'adsquads[0].sub_request_error_reason') || 'Create adSquad failed';
+
+        setAccounts((pre) =>
+          pre.map((preAccount) => {
+            if (preAccount.id !== ad_account_id) {
+              return preAccount;
+            }
+            return {
+              ...preAccount,
+              _status: 'text-red-500',
+              _statusMessage,
+            };
+          }),
+        );
+      }
+    },
+    [getCreatives],
+  );
+
+  const createCampaign = useCallback(
+    async (campaignPayload: CampaignCreateDTO, adSquadPayload: AdSquadCreateDTO): Promise<void> => {
+      setAccounts((pre) =>
+        pre.map((preAccount) => {
+          if (preAccount.id !== campaignPayload.ad_account_id) {
+            return preAccount;
+          }
+          return {
+            ...preAccount,
+            _status: 'text-neutral-800',
+            _statusMessage: 'Creating new campaign...',
+          };
+        }),
+      );
+
+      const JSONdata = JSON.stringify(campaignPayload);
+      const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSONdata };
+      const response = await fetch(`/api/adaccounts/${campaignPayload.ad_account_id}/campaigns`, options);
+      const result = await response.json();
+      const createdCampaign = _.get(result, 'campaigns[0].campaign', null);
+
+      if (createdCampaign?.id) {
+        await createAdSquad(campaignPayload.ad_account_id, { ...adSquadPayload, campaign_id: createdCampaign.id });
+      } else {
+        const _statusMessage = _.get(result, 'campaigns[0].sub_request_error_reason') || 'Create campaign failed';
+
+        setAccounts((pre) =>
+          pre.map((preAccount) => {
+            if (preAccount.id !== campaignPayload.ad_account_id) {
+              return preAccount;
+            }
+            return {
+              ...preAccount,
+              _status: 'text-red-500',
+              _statusMessage,
+            };
+          }),
+        );
+      }
+    },
+    [createAdSquad],
+  );
 
   const createAd = async (ad_squad_id: string, creative: CreativeDTO): Promise<void> => {
     setAccounts((pre) =>
@@ -388,88 +472,13 @@ export default function CampaignPage() {
     }
   };
 
-  const getCreatives = async (ad_account_id: string, ad_squad_id: string): Promise<void> => {
-    setAccounts((pre) =>
-      pre.map((preAccount) => {
-        if (preAccount.id !== ad_account_id) {
-          return preAccount;
-        }
-        return {
-          ...preAccount,
-          _status: 'text-neutral-800',
-          _statusMessage: 'Getting creatives...',
-        };
-      }),
-    );
-
-    const options = { method: 'GET', headers: { 'Content-Type': 'application/json' } };
-    const response = await fetch(`/api/adaccounts/${ad_account_id}/creatives`, options);
-    const result = await response.json();
-    const creative: CreativeDTO | null = _.get(result, 'creatives[0].creative', null);
-
-    if (creative) {
-      await createAd(ad_squad_id, creative);
-    } else {
-      const _statusMessage = _.get(result, 'creatives[0].sub_request_error_reason') || 'No creative to create ads';
-      setAccounts((pre) =>
-        pre.map((preAccount) => {
-          if (preAccount.id !== ad_account_id) {
-            return preAccount;
-          }
-          return {
-            ...preAccount,
-            _status: 'text-red-500',
-            _statusMessage,
-          };
-        }),
-      );
-    }
+  const onSyncChange = (event: any) => {
+    setSynchronously(event.target.value);
   };
 
-  const createAdSquad = async (ad_account_id: string, payload: AdSquadCreateDTO): Promise<void> => {
-    setAccounts((pre) =>
-      pre.map((preAccount) => {
-        if (preAccount.id !== ad_account_id) {
-          return preAccount;
-        }
-        return {
-          ...preAccount,
-          _status: 'text-neutral-800',
-          _statusMessage: 'Creating new adSquad...',
-        };
-      }),
-    );
-
-    const JSONdata = JSON.stringify(payload);
-    const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSONdata };
-    const response = await fetch(`/api/campaigns/${payload.campaign_id}/adsquads`, options);
-    const result = await response.json();
-
-    const newAdSquad: AdSquadDTO = _.get(result, 'adsquads[0].adsquad', null);
-    if (newAdSquad) {
-      await getCreatives(ad_account_id, newAdSquad?.id);
-    } else {
-      const _statusMessage = _.get(result, 'adsquads[0].sub_request_error_reason') || 'Create adSquad failed';
-
-      setAccounts((pre) =>
-        pre.map((preAccount) => {
-          if (preAccount.id !== ad_account_id) {
-            return preAccount;
-          }
-          return {
-            ...preAccount,
-            _status: 'text-red-500',
-            _statusMessage,
-          };
-        }),
-      );
-    }
+  const onBatchChange = (event: any) => {
+    setParallel(event.target.value);
   };
-
-  const selectedAccountNames = useMemo(
-    () => selectedFlatRows?.map((acc: AdAccountDTO) => acc.name)?.join(', ') || '',
-    [selectedFlatRows],
-  );
 
   const disabledSubmit = useMemo(() => selectedFlatRows.length === 0, [selectedFlatRows]);
 
@@ -486,8 +495,29 @@ export default function CampaignPage() {
     );
   }
 
+  const ConfigSection = (
+    <div className="bg-gray-300 p-4 rounded-lg">
+      <div className="grid grid-cols-2 gap-4">
+        <label className="flex items-center gap-2">
+          <span className="label label-text">Create multiple accounts</span>
+          <select value={synchronously as any} onChange={onSyncChange} className="select select-sm">
+            <option value="sync">sequentially</option>
+            <option value="async">parallel</option>
+          </select>
+        </label>
+        {synchronously === 'async' && (
+          <label className="cursor-pointer flex items-center gap-2 justify-left select-none">
+            <span className="label-text">Processes</span>
+            <input type="number" value={parallel} onChange={onBatchChange} className="input input-bordered input-sm" />
+            <span className="label-text">items in parallel.</span>
+          </label>
+        )}
+      </div>
+    </div>
+  );
+
   const CampaignSection = (
-    <div className="bg-stone-300 gap-2 p-4 rounded-lg">
+    <div className="bg-gray-300 gap-2 p-4 rounded-lg">
       <p className="text-2xl">Campaign Details</p>
       <span className="label label-text">Name (Required)</span>
       <input type="text" id="campaign_name" placeholder="Name" className="input input-bordered input-sm w-full" />
@@ -540,20 +570,11 @@ export default function CampaignPage() {
           />
         </div>
       </div>
-      <div className="flex-1">
-        <p className="text-1xl pt-4 pb-2">Ad Accounts ({selectedFlatRows.length} selected)</p>
-        <textarea
-          placeholder="Name of selected ad accounts"
-          className="textarea w-full"
-          disabled
-          value={selectedAccountNames}
-        />
-      </div>
     </div>
   );
 
   const AdSquadSection = (
-    <div className="bg-stone-300 gap-2 p-4 rounded-lg">
+    <div className="bg-gray-300 gap-2 p-4 rounded-lg">
       <p className="text-2xl">Ad Set Details</p>
       <span className="label label-text">Ad Set Name (Required)</span>
       <input
@@ -662,45 +683,64 @@ export default function CampaignPage() {
   );
 
   return (
-    <Layout>
-      <div className="flex items-center justify-between gap-4 px-4 py-2">
-        <div className="text-1xl">
-          {isLoading
-            ? 'Loading...'
-            : organizationID
-            ? `Org ${selectedOrgName} has ${accounts.length} accounts.`
-            : 'Please select your organization'}
+    <>
+      <Layout>
+        <div className="flex border border-base-300 rounded-box items-center justify-between gap-4 p-4 m-4">
+          <div className="text-xl">
+            {isLoading
+              ? 'Loading...'
+              : organizationID
+              ? `Org ${selectedOrgName} has ${accounts.length} accounts.`
+              : 'Please select your organization'}
+          </div>
+          <select value={organizationID} onChange={onSelectOrg} className="select select-bordered w-full max-w-xs">
+            <option value="">Select organization</option>
+            {organizations.map((organization: any) => (
+              <option key={organization.id} value={organization.id}>
+                {organization.name}
+              </option>
+            ))}
+          </select>
         </div>
-        <select value={organizationID} onChange={onSelectOrg} className="select select-bordered w-full max-w-xs">
-          <option value="">Select organization</option>
-          {organizations.map((organization: any) => (
-            <option key={organization.id} value={organization.id}>
-              {organization.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      {organizationID?.length > 0 && (
-        <div className="flex flex-col">
-          <form noValidate className="form-control grid grid-cols-2 gap-4 m-4" onSubmit={handleSubmit}>
-            {CampaignSection}
-            {AdSquadSection}
+        <div tabIndex={0} className="collapse collapse-arrow border border-base-300 rounded-box m-4">
+          <input type="checkbox" defaultChecked />
+          <div className="collapse-title text-xl font-medium">Configuration</div>
+          <div className="collapse-content">{ConfigSection}</div>
+        </div>
+        {organizationID?.length > 0 && (
+          <form noValidate className="form-control flex flex-col gap-4 m-4" onSubmit={handleSubmit}>
+            <div tabIndex={0} className="collapse collapse-arrow border border-base-300 rounded-box">
+              <input type="checkbox" defaultChecked />
+              <div className="collapse-title text-xl font-medium">Campaign & Ad Form</div>
+              <div className="collapse-content">
+                <div className="grid grid-cols-2 gap-4">
+                  {CampaignSection}
+                  {AdSquadSection}
+                </div>
+              </div>
+            </div>
+
+            <div tabIndex={0} className="collapse collapse-arrow border border-base-300 rounded-box">
+              <input type="checkbox" defaultChecked />
+              <div className="collapse-title text-xl font-medium">Select Ad accounts ({selectedFlatRows.length})</div>
+              <div className="collapse-content">
+                {isAccountLoading ? <div className="text-2xl p-4">Loading ad accounts...</div> : renderTable()}
+              </div>
+            </div>
+
             <div className="flex">
               <button className="btn btn-active btn-primary" type="submit" disabled={disabledSubmit}>
                 {`Create campaigns for selected accounts`}
               </button>
             </div>
           </form>
-          <div className="w-full">
-            {isAccountLoading ? <div className="text-2xl p-4">Loading ad accounts...</div> : renderTable()}
-          </div>
-          <CampaignModal
-            modalID={viewCampaignCtx.modalID}
-            campaigns={viewCampaignCtx.campaigns}
-            loading={viewCampaignCtx.loading}
-          />
-        </div>
-      )}
-    </Layout>
+        )}
+      </Layout>
+      <CampaignModal
+        modalID={viewCampaignCtx.modalID}
+        campaigns={viewCampaignCtx.campaigns}
+        loading={viewCampaignCtx.loading}
+      />
+    </>
   );
 }

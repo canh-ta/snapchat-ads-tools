@@ -1,13 +1,18 @@
 import Navbar from './Navbar';
 import Footer from './footer';
-import type { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 
 export default function Layout({ children }: { children: ReactNode }) {
+  const [theme, setTheme] = useState<'dark' | 'light'>('light');
+
+  const onThemeChange = (isDark: boolean) => {
+    setTheme(isDark ? 'dark' : 'light');
+  };
   return (
-    <>
-      <Navbar />
+    <main data-theme={theme}>
+      <Navbar theme={theme} onThemeChange={onThemeChange} />
       <main>{children}</main>
       <Footer />
-    </>
+    </main>
   );
 }
