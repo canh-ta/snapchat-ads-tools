@@ -5,33 +5,34 @@ import { getHeaders } from '@libs/headers';
 import { AdSquadCreateDTO } from '@models/AdSquad';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const {
-    bid_strategy,
-    billing_event,
-    campaign_id,
-    delivery_constraint,
-    name,
-    status,
-    optimization_goal,
-    targeting,
-    type,
-    bid_micro,
-    child_ad_type,
-    daily_budget_micro,
-    end_time,
-    placement_v2,
-    start_time,
-    auto_bid,
-    target_bid,
-    ad_account_id,
-  } = req.body as AdSquadCreateDTO;
+  const { campaign_id } = req.query;
 
   const token = await getToken({ req });
-  if (!token) {
+  if (!token || typeof campaign_id !== 'string') {
     return res.status(403);
   }
 
   if (req.method === 'POST') {
+    const {
+      bid_strategy,
+      billing_event,
+      delivery_constraint,
+      name,
+      status,
+      optimization_goal,
+      targeting,
+      type,
+      bid_micro,
+      child_ad_type,
+      daily_budget_micro,
+      end_time,
+      placement_v2,
+      start_time,
+      auto_bid,
+      target_bid,
+      ad_account_id,
+    } = req.body as AdSquadCreateDTO;
+
     try {
       const headers = getHeaders(token);
       const pixelRequestOptions = { method: 'GET', headers };

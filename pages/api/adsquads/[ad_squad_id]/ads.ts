@@ -5,7 +5,7 @@ import { getHeaders } from '@libs/headers';
 import { AdsCreateDTO } from '@models/Ads';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { ad_squad_id, creative_id, name, status, type } = req.body as AdsCreateDTO;
+  const { ad_squad_id } = req.query;
 
   const token = await getToken({ req });
   if (!token) {
@@ -13,6 +13,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'POST') {
+    const { creative_id, name, status, type } = req.body as AdsCreateDTO;
+
     try {
       const headers = getHeaders(token);
       const body = JSON.stringify({

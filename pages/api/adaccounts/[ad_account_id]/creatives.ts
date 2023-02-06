@@ -4,11 +4,12 @@ import { getHeaders } from '@libs/headers';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { ad_account_id } = req.query;
-  const token = await getToken({ req });
 
+  const token = await getToken({ req });
   if (!token) {
     return res.status(403);
   }
+
   if (req.method === 'GET') {
     const headers = getHeaders(token);
     const requestOptions = { method: 'GET', headers };

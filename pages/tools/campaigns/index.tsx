@@ -86,7 +86,7 @@ export default function CampaignPage() {
                 ({
                   ...adaccount,
                   _status: 'text-neutral-500',
-                  _statusMessage: '-- No action --',
+                  _statusMessage: '',
                 } as AdAccountWithAction),
             ),
           );
@@ -305,9 +305,8 @@ export default function CampaignPage() {
     );
 
     const JSONdata = JSON.stringify(campaignPayload);
-    const endpoint = '/api/campaigns/create';
     const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSONdata };
-    const response = await fetch(endpoint, options);
+    const response = await fetch(`/api/adaccounts/${campaignPayload.ad_account_id}/campaigns`, options);
     const result = await response.json();
     const createdCampaign = _.get(result, 'campaigns[0].campaign', null);
 
@@ -354,9 +353,8 @@ export default function CampaignPage() {
     };
 
     const JSONdata = JSON.stringify(payload);
-    const endpoint = '/api/ads/create';
     const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSONdata };
-    const response = await fetch(endpoint, options);
+    const response = await fetch(`/api/adsquads/${ad_squad_id}/ads`, options);
     const result = await response.json();
     const createdAd: AdsDTO | null = _.get(result, 'ads[0].ad', null);
 
@@ -368,7 +366,7 @@ export default function CampaignPage() {
           }
           return {
             ...preAccount,
-            _status: 'text-neutral-500',
+            _status: 'text-emerald-500',
             _statusMessage: 'Done',
           };
         }),
@@ -404,9 +402,8 @@ export default function CampaignPage() {
       }),
     );
 
-    const endpoint = `/api/adaccounts/${ad_account_id}/creatives`;
-    const options = { method: 'POST', headers: { 'Content-Type': 'application/json' } };
-    const response = await fetch(endpoint, options);
+    const options = { method: 'GET', headers: { 'Content-Type': 'application/json' } };
+    const response = await fetch(`/api/adaccounts/${ad_account_id}/creatives`, options);
     const result = await response.json();
     const creative: CreativeDTO | null = _.get(result, 'creatives[0].creative', null);
 
@@ -444,9 +441,8 @@ export default function CampaignPage() {
     );
 
     const JSONdata = JSON.stringify(payload);
-    const endpoint = '/api/adsquads/create';
     const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSONdata };
-    const response = await fetch(endpoint, options);
+    const response = await fetch(`/api/campaigns/${payload.campaign_id}/adsquads`, options);
     const result = await response.json();
 
     const newAdSquad: AdSquadDTO = _.get(result, 'adsquads[0].adsquad', null);
