@@ -289,8 +289,12 @@ export default function CampaignPage() {
         });
     }
   };
+  const deleteCampaign = useCallback(async (ad_account_id: string, campaign_id: string): Promise<void> => {
+    const options = { method: 'DELETE', headers: { 'Content-Type': 'application/json' } };
+    const response = await fetch(`/api/campaigns/${campaign_id}`, options);
+    const result = await response.json();
+    const status = _.get(result, 'request_status', 'failed');
 
-  const getCreatives = useCallback(async (ad_account_id: string, ad_squad_id: string): Promise<void> => {
     setAccounts((pre) =>
       pre.map((preAccount) => {
         if (preAccount.id !== ad_account_id) {
@@ -298,21 +302,39 @@ export default function CampaignPage() {
         }
         return {
           ...preAccount,
-          _status: 'text-neutral-800',
-          _statusMessage: 'Getting creatives...',
+          _status: 'text-red-500',
+          _statusMessage: `${preAccount._statusMessage} => ${
+            status !== 'success' ? 'Campaign has been deleted' : 'Campaign delete failed'
+          }`,
         };
       }),
     );
+  }, []);
 
-    const options = { method: 'GET', headers: { 'Content-Type': 'application/json' } };
-    const response = await fetch(`/api/adaccounts/${ad_account_id}/creatives`, options);
+  const deleteAdSquad = useCallback(async (ad_account_id: string, ad_squad_id: string): Promise<void> => {
+    const options = { method: 'DELETE', headers: { 'Content-Type': 'application/json' } };
+    const response = await fetch(`/api/adsquads/${ad_squad_id}`, options);
     const result = await response.json();
-    const creative: CreativeDTO | null = _.get(result, 'creatives[0].creative', null);
+    const status = _.get(result, 'request_status', 'failed');
 
-    if (creative) {
-      await createAd(ad_squad_id, creative);
-    } else {
-      const _statusMessage = _.get(result, 'creatives[0].sub_request_error_reason') || 'No creative to create ads';
+    setAccounts((pre) =>
+      pre.map((preAccount) => {
+        if (preAccount.id !== ad_account_id) {
+          return preAccount;
+        }
+        return {
+          ...preAccount,
+          _status: 'text-red-500',
+          _statusMessage: `${preAccount._statusMessage} => ${
+            status !== 'success' ? 'Ad squad has been deleted' : 'Ad Squad delete failed'
+          }`,
+        };
+      }),
+    );
+  }, []);
+
+  const getCreatives = useCallback(
+    async (ad_account_id: string, ad_squad_id: string, campaign_id: string): Promise<void> => {
       setAccounts((pre) =>
         pre.map((preAccount) => {
           if (preAccount.id !== ad_account_id) {
@@ -320,13 +342,40 @@ export default function CampaignPage() {
           }
           return {
             ...preAccount,
-            _status: 'text-red-500',
-            _statusMessage,
+            _status: 'text-neutral-800',
+            _statusMessage: 'Getting the creatives...',
           };
         }),
       );
-    }
-  }, []);
+
+      const options = { method: 'GET', headers: { 'Content-Type': 'application/json' } };
+      const response = await fetch(`/api/adaccounts/${ad_account_id}/creatives`, options);
+      const result = await response.json();
+      const creative: CreativeDTO | null = _.get(result, 'creatives[0].creative', null);
+
+      if (creative) {
+        await createAd(ad_squad_id, creative);
+      } else {
+        const _statusMessage = _.get(result, 'creatives[0].sub_request_error_reason') || 'No creative to create ads';
+        setAccounts((pre) =>
+          pre.map((preAccount) => {
+            if (preAccount.id !== ad_account_id) {
+              return preAccount;
+            }
+            return {
+              ...preAccount,
+              _status: 'text-red-500',
+              _statusMessage,
+            };
+          }),
+        );
+
+        await deleteAdSquad(ad_account_id, ad_squad_id);
+        await deleteCampaign(ad_account_id, campaign_id);
+      }
+    },
+    [deleteAdSquad, deleteCampaign],
+  );
 
   const createAdSquad = useCallback(
     async (ad_account_id: string, payload: AdSquadCreateDTO): Promise<void> => {
@@ -338,7 +387,7 @@ export default function CampaignPage() {
           return {
             ...preAccount,
             _status: 'text-neutral-800',
-            _statusMessage: 'Creating new adSquad...',
+            _statusMessage: 'Creating new ad squad...',
           };
         }),
       );
@@ -350,9 +399,9 @@ export default function CampaignPage() {
 
       const newAdSquad: AdSquadDTO = _.get(result, 'adsquads[0].adsquad', null);
       if (newAdSquad) {
-        await getCreatives(ad_account_id, newAdSquad?.id);
+        await getCreatives(ad_account_id, newAdSquad?.id, payload.campaign_id);
       } else {
-        const _statusMessage = _.get(result, 'adsquads[0].sub_request_error_reason') || 'Create adSquad failed';
+        const _statusMessage = _.get(result, 'adsquads[0].sub_request_error_reason') || 'Create ad squad failed';
 
         setAccounts((pre) =>
           pre.map((preAccount) => {
@@ -366,9 +415,11 @@ export default function CampaignPage() {
             };
           }),
         );
+
+        await deleteCampaign(ad_account_id, payload.campaign_id);
       }
     },
-    [getCreatives],
+    [deleteCampaign, getCreatives],
   );
 
   const createCampaign = useCallback(
@@ -451,7 +502,7 @@ export default function CampaignPage() {
           return {
             ...preAccount,
             _status: 'text-emerald-500',
-            _statusMessage: 'Done',
+            _statusMessage: 'Campaign + Ad Squad + Ads has been created',
           };
         }),
       );
@@ -477,7 +528,7 @@ export default function CampaignPage() {
   };
 
   const onBatchChange = (event: any) => {
-    setParallel(event.target.value);
+    setParallel(Number(event.target.value));
   };
 
   const disabledSubmit = useMemo(() => selectedFlatRows.length === 0, [selectedFlatRows]);
