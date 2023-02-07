@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Column } from 'react-table';
 import PromisePool from '@supercharge/promise-pool';
-import Layout from '@components/layout';
+import Layout from '@components/Layout';
 import AccessDenied from '@components/AccessDenied';
 import { AdAccountDTO } from '@models/AdAccount';
 import useTable from '@hooks/useTable';
@@ -133,16 +133,17 @@ export default function CampaignPage() {
 
   const columns: Column<AdAccountWithAction>[] = useMemo(
     () => [
-      { Header: 'Name', accessor: 'name', sortType: 'basic' },
+      { Header: 'Account Name', accessor: 'name', sortType: 'basic' },
+      { Header: 'Ad Account ID', accessor: 'id', sortType: 'basic' },
+      { Header: 'Account Type', accessor: 'type', sortType: 'basic' },
       {
-        Header: 'Status',
+        Header: 'Account Status',
         accessor: 'status',
         sortType: 'basic',
         Cell: ({ value }) => (
           <div className={`badge badge-outline ${value === 'ACTIVE' ? 'badge-success' : ''}`}>{value}</div>
         ),
       },
-      { Header: 'Currency', accessor: 'currency', Cell: ({ value }) => <div className="badge">{value}</div> },
       {
         Header: 'Campaigns',
         Cell: ({ row: { original } }: { row: { original: AdAccountWithAction } }) => {
@@ -289,6 +290,7 @@ export default function CampaignPage() {
         });
     }
   };
+
   const deleteCampaign = useCallback(async (ad_account_id: string, campaign_id: string): Promise<void> => {
     const options = { method: 'DELETE', headers: { 'Content-Type': 'application/json' } };
     const response = await fetch(`/api/campaigns/${campaign_id}`, options);
@@ -351,10 +353,14 @@ export default function CampaignPage() {
       const options = { method: 'GET', headers: { 'Content-Type': 'application/json' } };
       const response = await fetch(`/api/adaccounts/${ad_account_id}/creatives`, options);
       const result = await response.json();
-      const creative: CreativeDTO | null = _.get(result, 'creatives[0].creative', null);
 
-      if (creative) {
-        await createAd(ad_squad_id, creative);
+      const creatives: CreativeDTO[] = _.get(result, 'creatives', [])
+        .map((creativeRes: any) => _.get(creativeRes, 'creative'))
+        .filter((creative: CreativeDTO | null) => creative?.id)
+        .sort((a: CreativeDTO, b: CreativeDTO) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      if (creatives.length) {
+        await createAd(ad_squad_id, creatives[0]);
       } else {
         const _statusMessage = _.get(result, 'creatives[0].sub_request_error_reason') || 'No creative to create ads';
         setAccounts((pre) =>
@@ -550,7 +556,7 @@ export default function CampaignPage() {
     <div className="bg-gray-300 p-4 rounded-lg">
       <div className="grid grid-cols-2 gap-4">
         <label className="flex items-center gap-2">
-          <span className="label label-text">Create multiple accounts</span>
+          <span className="label label-text">Create multiple campaigns</span>
           <select value={synchronously as any} onChange={onSyncChange} className="select select-sm">
             <option value="sync">sequentially</option>
             <option value="async">parallel</option>
@@ -744,7 +750,12 @@ export default function CampaignPage() {
               ? `Org ${selectedOrgName} has ${accounts.length} accounts.`
               : 'Please select your organization'}
           </div>
-          <select value={organizationID} onChange={onSelectOrg} className="select select-bordered w-full max-w-xs">
+          <select
+            value={organizationID}
+            onChange={onSelectOrg}
+            disabled={organizations.length === 0}
+            className="select select-bordered w-full max-w-xs"
+          >
             <option value="">Select organization</option>
             {organizations.map((organization: any) => (
               <option key={organization.id} value={organization.id}>

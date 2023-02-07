@@ -18,7 +18,7 @@ function IndeterminateCheckbox({
   return <input type="checkbox" ref={ref} className={className + ' checkbox'} {...rest} />;
 }
 
-const pageSizeOptions = [10, 20, 50, 100];
+const pageSizeOptions = [10, 20, 50, 100, 200];
 
 function useTable<T extends object>({ columns, data }: { columns: Column<T>[]; data: T[] }) {
   const selectHook = (hooks: Hooks<T>) => {
