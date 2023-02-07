@@ -1,6 +1,7 @@
 import Navbar from './Navbar';
 import Footer from './footer';
 import { ReactNode, useState } from 'react';
+import { AnalyticsWrapper } from './Analytics';
 
 export default function Layout({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<'dark' | 'light'>('light');
@@ -12,6 +13,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     <main data-theme={theme}>
       <Navbar theme={theme} onThemeChange={onThemeChange} />
       <main>{children}</main>
+      <AnalyticsWrapper />
       <Footer />
     </main>
   );
