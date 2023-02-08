@@ -5,6 +5,7 @@ export interface AdAccountCreateDTO {
   currency: ECurrency;
   funding_source_ids: string[]; // Array of Funding Source IDs
   billing_type: EBillingType;
+  billing_center_id: string;
   name: string;
   organization_id: string;
   test?: boolean; //Indicates Ad Account is a test ad account, test ad accounts can never serve live ads

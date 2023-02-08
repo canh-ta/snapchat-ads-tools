@@ -16,4 +16,6 @@ export interface CreativeDTO {
   playback_type: 'AUTO_ADVANCING' | 'LOOPING';
   ad_product?: string;
   profile_properties?: any;
+  created_at: string;
+  updated_at: string;
 }
