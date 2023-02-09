@@ -18,12 +18,12 @@ const menu: Link[] = [
     link: '/tools/adaccounts',
   },
   {
-    title: 'Campaigns Tools',
+    title: 'Campaigns',
     link: '/tools/campaigns',
   },
   {
-    title: 'API',
-    link: '/tools/swagger',
+    title: 'Scripts',
+    link: '/tools/scripts',
   },
   {
     title: 'Me',

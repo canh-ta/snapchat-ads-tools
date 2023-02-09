@@ -25,9 +25,9 @@ function useTable<T extends object>({ columns, data }: { columns: Column<T>[]; d
     hooks.visibleColumns.push((columns) => [
       {
         id: 'selection',
-        Header: ({ getToggleAllRowsSelectedProps }: any) => (
+        Header: ({ getToggleAllPageRowsSelectedProps }: any) => (
           <div className="flex justify-center">
-            <IndeterminateCheckbox {...getToggleAllRowsSelectedProps()} />
+            <IndeterminateCheckbox {...getToggleAllPageRowsSelectedProps()} />
           </div>
         ),
         Cell: ({ row }: any) => (

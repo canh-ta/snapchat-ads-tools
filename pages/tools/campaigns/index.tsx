@@ -784,7 +784,9 @@ export default function CampaignPage() {
 
             <div tabIndex={0} className="collapse collapse-arrow border border-base-300 rounded-box">
               <input type="checkbox" defaultChecked />
-              <div className="collapse-title text-xl font-medium">Select Ad accounts ({selectedFlatRows.length})</div>
+              <div className="collapse-title text-xl font-medium">
+                Ad accounts ({selectedFlatRows.length}/{accounts.length} selected)
+              </div>
               <div className="collapse-content">
                 {isAccountLoading ? <div className="text-2xl p-4">Loading ad accounts...</div> : renderTable()}
               </div>
