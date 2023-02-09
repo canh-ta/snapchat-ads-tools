@@ -296,6 +296,7 @@ export default function AdAccountsPage() {
   const { renderTable } = useTable({
     columns,
     data: accounts,
+    sortBy: [{ desc: true, id: '_message' }],
   });
 
   const onSyncChange = (event: any) => {

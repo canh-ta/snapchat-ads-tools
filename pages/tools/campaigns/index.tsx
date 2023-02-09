@@ -89,7 +89,7 @@ export default function CampaignPage() {
                 ({
                   ...adaccount,
                   _status: 'text-neutral-400',
-                  _statusMessage: '',
+                  _statusMessage: '<No action>',
                 } as AdAccountWithAction),
             ),
           );
@@ -170,6 +170,7 @@ export default function CampaignPage() {
   const { renderTable, selectedFlatRows } = useTable({
     columns,
     data: accounts,
+    sortBy: [{ desc: true, id: 'name' }],
   });
 
   const handleSubmit = async (event: any) => {

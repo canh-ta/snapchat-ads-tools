@@ -20,7 +20,13 @@ function IndeterminateCheckbox({
 
 const pageSizeOptions = [10, 20, 50, 100, 200];
 
-function useTable<T extends object>({ columns, data }: { columns: Column<T>[]; data: T[] }) {
+interface Props<T extends object> {
+  columns: Column<T>[];
+  data: T[];
+  sortBy?: { id: string; desc: boolean }[];
+}
+
+function useTable<T extends object>({ columns, data, sortBy }: Props<T>) {
   const selectHook = (hooks: Hooks<T>) => {
     hooks.visibleColumns.push((columns) => [
       {
@@ -44,6 +50,7 @@ function useTable<T extends object>({ columns, data }: { columns: Column<T>[]; d
     () => ({
       columns,
       data,
+      initialState: { sortBy },
       autoResetPage: false,
       autoResetExpanded: false,
       autoResetGroupBy: false,
@@ -52,8 +59,8 @@ function useTable<T extends object>({ columns, data }: { columns: Column<T>[]; d
       autoResetFilters: false,
       autoResetRowState: false,
     }),
-    [columns, data],
-  );
+    [columns, data, sortBy],
+  ) as any;
 
   const tableInstance = useReactTable(options, useSortBy, usePagination, useRowSelect, selectHook) as any;
 
