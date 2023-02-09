@@ -53,24 +53,26 @@ export default function CampaignPage() {
   });
 
   useEffect(() => {
-    setLoading(true);
-    fetch(`/api/organizations`)
-      .then((response) => {
-        if (response.status === 200) {
-          return response.json();
-        }
-        throw new Error(response.statusText);
-      })
-      .then((data) => {
-        const orgs = _.get(data, 'organizations', []);
-        setOrganizations(orgs.map(({ organization }: any) => organization));
-        setLoading(false);
-      })
-      .catch((error) => {
-        setLoading(false);
-        alert(error.message);
-      });
-  }, []);
+    if (session) {
+      setLoading(true);
+      fetch(`/api/organizations`)
+        .then((response) => {
+          if (response.status === 200) {
+            return response.json();
+          }
+          throw new Error(response.statusText);
+        })
+        .then((data) => {
+          const orgs = _.get(data, 'organizations', []);
+          setOrganizations(orgs.map(({ organization }: any) => organization));
+          setLoading(false);
+        })
+        .catch((error) => {
+          setLoading(false);
+          console.error(error.message);
+        });
+    }
+  }, [session]);
 
   useEffect(() => {
     setIsAccountLoading(true);
@@ -97,7 +99,7 @@ export default function CampaignPage() {
         })
         .catch((error) => {
           setIsAccountLoading(false);
-          // alert(error.message);
+          console.error(error.message);
         });
     }
   }, [organizationID]);

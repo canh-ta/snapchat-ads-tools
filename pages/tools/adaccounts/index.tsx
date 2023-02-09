@@ -33,24 +33,26 @@ export default function AdAccountsPage() {
   const [accNumber, setAccNumber] = useState(0);
 
   useEffect(() => {
-    setLoading(true);
-    fetch(`/api/organizations`)
-      .then((response) => {
-        if (response.status === 200) {
-          return response.json();
-        }
-        throw new Error(response.statusText);
-      })
-      .then((data) => {
-        const orgs = _.get(data, 'organizations', []);
-        setOrganizations(orgs.map(({ organization }: any) => organization));
-        setLoading(false);
-      })
-      .catch((error) => {
-        setLoading(false);
-        alert(error.message);
-      });
-  }, []);
+    if (session) {
+      setLoading(true);
+      fetch(`/api/organizations`)
+        .then((response) => {
+          if (response.status === 200) {
+            return response.json();
+          }
+          throw new Error(response.statusText);
+        })
+        .then((data) => {
+          const orgs = _.get(data, 'organizations', []);
+          setOrganizations(orgs.map(({ organization }: any) => organization));
+          setLoading(false);
+        })
+        .catch((error) => {
+          setLoading(false);
+          console.error(error.message);
+        });
+    }
+  }, [session]);
 
   useEffect(() => {
     if (organizationID) {
@@ -74,7 +76,7 @@ export default function AdAccountsPage() {
         })
         .catch((error) => {
           setAccLoading(false);
-          alert(error.message);
+          console.error(error.message);
         });
 
       fetch(`/api/organizations/${organizationID}/billingcenters`)
@@ -88,7 +90,7 @@ export default function AdAccountsPage() {
           setBillingCenters(data.billingcenters.map(({ billingcenter }: any) => billingcenter));
         })
         .catch((error) => {
-          alert(error.message);
+          console.error(error.message);
         });
 
       fetch(`/api/organizations/${organizationID}/fundingsources`)
@@ -102,7 +104,7 @@ export default function AdAccountsPage() {
           setFundingSources(data.fundingsources.map(({ fundingsource }: any) => fundingsource));
         })
         .catch((error) => {
-          alert(error.message);
+          console.error(error.message);
         });
     }
   }, [organizationID]);
