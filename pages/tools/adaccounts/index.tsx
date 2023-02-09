@@ -9,20 +9,21 @@ import { AdAccountDTO } from '@models/AdAccount';
 import useTable from '@hooks/useTable';
 import { Organization } from '@models/Organization';
 import { BillingCenter } from '@models/BillingCenter';
-import { FundingSource } from '@models/FundingSource';
+import { AssignPaymentMethodDTO, FundingSource } from '@models/FundingSource';
 import { AdAccountCreateDTO } from '@models/AdAccount';
 import { EStatus } from '@models/enums';
 
-interface AdAccountWithNew extends AdAccountDTO {
-  isNew: boolean;
+interface AdAccountWithAction extends AdAccountDTO {
+  _status: 'indie' | 'error' | 'success' | 'progress' | 'warning';
+  _message: string;
 }
 
 export default function AdAccountsPage() {
   const { data: session } = useSession();
   const [isLoading, setLoading] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
   const [isAccLoading, setAccLoading] = useState(false);
-  const [accounts, setAccounts] = useState<AdAccountWithNew[]>([]);
-  const [errors, setErrors] = useState<String[]>([]);
+  const [accounts, setAccounts] = useState<AdAccountWithAction[]>([]);
   const [billingCenters, setBillingCenters] = useState<BillingCenter[]>([]);
   const [fundingSources, setFundingSources] = useState<FundingSource[]>([]);
   const [organizationID, setOrganizationID] = useState('');
@@ -63,7 +64,11 @@ export default function AdAccountsPage() {
         })
         .then((data) => {
           setAccounts(
-            data.adaccounts.map(({ adaccount }: { adaccount: AdAccountDTO }) => ({ ...adaccount, isNew: false })),
+            data.adaccounts.map(({ adaccount }: { adaccount: AdAccountDTO }) => ({
+              ...adaccount,
+              _status: 'indie',
+              _message: '<No action>',
+            })),
           );
           setAccLoading(false);
         })
@@ -102,15 +107,9 @@ export default function AdAccountsPage() {
     }
   }, [organizationID]);
 
-  const columns: Column<AdAccountWithNew>[] = useMemo(
+  const columns: Column<AdAccountWithAction>[] = useMemo(
     () => [
       { Header: 'Name', accessor: 'name', sortType: 'basic' },
-      {
-        Header: 'State',
-        accessor: 'isNew',
-        sortType: 'basic',
-        Cell: ({ value }) => (value ? <div className="badge badge-outline badge-success">NEW</div> : <></>),
-      },
       { Header: 'ID', accessor: 'id', sortType: 'basic' },
       { Header: 'Type', accessor: 'type', sortType: 'basic' },
       {
@@ -121,12 +120,76 @@ export default function AdAccountsPage() {
           <div className={`badge badge-outline ${value === 'ACTIVE' ? 'badge-success' : ''}`}>{value}</div>
         ),
       },
+      {
+        Header: 'Actions',
+        accessor: '_message',
+        Cell: ({
+          value,
+          row: {
+            original: { _status },
+          },
+        }) => {
+          if (_status === 'error') {
+            return <p className="w-full text-red-500">{value}</p>;
+          }
+          if (_status === 'warning') {
+            return <p className="w-full text-amber-500">{value}</p>;
+          }
+          if (_status === 'progress') {
+            return <p className="w-full text-cyan-500">{value}</p>;
+          }
+          if (_status === 'success') {
+            return <p className="w-full text-green-500">{value}</p>;
+          }
+          return <p className="w-full text-neutral-400">{value}</p>;
+        },
+      },
     ],
+    [],
+  );
+
+  const assignPaymentMethod = useCallback(
+    async (ad_account_id: string, funding_source_id: string, payload: AssignPaymentMethodDTO): Promise<void> => {
+      setIsAdding(true);
+      const JSONdata = JSON.stringify(payload);
+      const options = { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSONdata };
+      const response = await fetch(
+        `/api/adaccounts/${ad_account_id}/assign_payment_methods/${funding_source_id}`,
+        options,
+      );
+      const result = await response.json();
+      const fundingsource: FundingSource | null = _.get(result, 'fundingsource', null);
+
+      if (fundingsource) {
+        setAccounts((pre) =>
+          pre.map((account) => {
+            if (account.id !== ad_account_id) {
+              return account;
+            }
+            return { ...account, _status: 'success', _message: 'New account with credit card' };
+          }),
+        );
+        setIsAdding(false);
+      } else {
+        const _message = _.get(result, 'sub_request_error_reason') || 'Assign payment methods failed';
+
+        setAccounts((pre) =>
+          pre.map((account) => {
+            if (account.id !== ad_account_id) {
+              return account;
+            }
+            return { ...account, _status: 'error', _message };
+          }),
+        );
+        setIsAdding(false);
+      }
+    },
     [],
   );
 
   const createAccount = useCallback(
     async (payload: AdAccountCreateDTO): Promise<void> => {
+      setIsAdding(true);
       const JSONdata = JSON.stringify(payload);
       const options = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSONdata };
       const response = await fetch(`/api/organizations/${organizationID}/adaccounts`, options);
@@ -134,14 +197,38 @@ export default function AdAccountsPage() {
       const newAccount: AdAccountDTO | null = _.get(result, 'adaccounts[0].adaccount', null);
 
       if (newAccount) {
-        setAccounts((pre) => [...pre, { ...newAccount, isNew: true }]);
+        const { funding_source_ids, funding_source_type } = payload;
+        if (funding_source_ids?.length && funding_source_type) {
+          setAccounts((pre) => [
+            ...pre,
+            { ...newAccount, _status: 'progress', _message: 'Assigning payment methods...' },
+          ]);
+          await assignPaymentMethod(newAccount.id, funding_source_ids[0], {
+            exclusive: true,
+            type: funding_source_type,
+          });
+        } else {
+          setAccounts((pre) => [
+            ...pre,
+            { ...newAccount, _status: 'warning', _message: 'Account created without payment method' },
+          ]);
+        }
       } else {
-        const err = _.get(result, 'adaccounts[0].sub_request_error_reason') || 'Create account failed';
-        console.log(payload.name, err);
-        setErrors((pre) => [...pre, err]);
+        const _message = _.get(result, 'adaccounts[0].sub_request_error_reason') || 'Create account failed';
+        const failedAccount: AdAccountWithAction = {
+          ...payload,
+          id: '',
+          updated_at: '',
+          created_at: '',
+          delivery_status: '',
+          _status: 'error',
+          _message,
+        };
+        setAccounts((pre) => [...pre, failedAccount]);
+        setIsAdding(false);
       }
     },
-    [organizationID],
+    [assignPaymentMethod, organizationID],
   );
 
   const onSelectOrg = (event: any) => {
@@ -175,6 +262,7 @@ export default function AdAccountsPage() {
 
     const accountNames = Array.from({ length: accNumber }, (_, index) => `${name_prefix} ${index}`);
     const selectedOrg: Organization = organizations.filter((org: Organization) => org.id === organization_id)[0];
+    const selectedCard: FundingSource = fundingSources.filter((fs) => fs.id === funding_source_id)[0];
 
     let payload: AdAccountCreateDTO = {
       name: '',
@@ -184,11 +272,12 @@ export default function AdAccountsPage() {
       organization_id,
       billing_type,
       billing_center_id,
-      funding_source_ids: [funding_source_id],
       currency,
       timezone,
       agency_representing_client: false,
       client_paying_invoices: false,
+      funding_source_ids: [funding_source_id],
+      funding_source_type: selectedCard.type,
     };
 
     if (synchronously === 'sync') {
@@ -233,6 +322,7 @@ export default function AdAccountsPage() {
       </Layout>
     );
   }
+
   const FormSection = (
     <div className="bg-gray-300 gap-2 p-4 rounded-lg">
       <div className="grid grid-cols-4 gap-4">
@@ -395,7 +485,11 @@ export default function AdAccountsPage() {
               <div className="collapse-content">{FormSection}</div>
             </div>
             <div className="flex mt-4">
-              <button className="btn btn-active btn-primary" type="submit">
+              <button
+                type="submit"
+                disabled={isAdding || accNumber === 0}
+                className={`btn btn-active btn-primary ${isAdding ? 'loading' : ''}`}
+              >
                 {`Create ${accNumber} new accounts`}
               </button>
             </div>

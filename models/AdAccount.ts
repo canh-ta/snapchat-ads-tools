@@ -3,7 +3,6 @@ import { EAccountType, EBillingType, ECurrency, EStatus } from './enums';
 export interface AdAccountCreateDTO {
   advertiser: string; //Name of the Advertiser
   currency: ECurrency;
-  funding_source_ids: string[]; // Array of Funding Source IDs
   billing_type: EBillingType;
   billing_center_id: string;
   name: string;
@@ -16,6 +15,10 @@ export interface AdAccountCreateDTO {
   agency_representing_client: boolean;
   client_paying_invoices: boolean;
   status: EStatus;
+
+  // For assigning payment methods
+  funding_source_ids?: string[]; // Array of Funding Source IDs
+  funding_source_type?: 'LINE_OF_CREDIT' | 'CREDIT_CARD' | 'COUPON' | 'PAYPAL';
 }
 
 export interface AdAccountDTO extends AdAccountCreateDTO {

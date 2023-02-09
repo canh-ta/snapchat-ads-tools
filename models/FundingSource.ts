@@ -11,3 +11,8 @@ export interface FundingSource {
   daily_spend_limit_micro: 25000000;
   daily_spend_currency: 'USD' | 'CAD' | 'GBP' | 'AUD' | 'EUR';
 }
+
+export interface AssignPaymentMethodDTO {
+  exclusive: boolean;
+  type: 'LINE_OF_CREDIT' | 'CREDIT_CARD' | 'COUPON' | 'PAYPAL';
+}

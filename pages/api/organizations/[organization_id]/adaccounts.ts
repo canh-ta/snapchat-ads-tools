@@ -37,7 +37,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       billing_type,
       client_paying_invoices,
       currency,
-      funding_source_ids,
       organization_id,
       status,
       timezone,
@@ -53,13 +52,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         organization_id,
         billing_type,
         billing_center_id,
-        funding_source_ids,
         currency,
         timezone,
         agency_representing_client,
         client_paying_invoices,
       };
-      console.log(newAccount);
 
       const body = JSON.stringify({ adaccounts: [newAccount] });
       const requestOptions = { method: 'POST', headers, body, redirect: 'follow' };

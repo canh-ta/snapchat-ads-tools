@@ -23,7 +23,7 @@ import {
 } from '@models/enums';
 
 interface AdAccountWithAction extends AdAccountDTO {
-  _status: 'text-neutral-500' | 'text-neutral-800' | 'text-red-500' | 'text-emerald-500';
+  _status: 'text-neutral-400' | 'text-neutral-800' | 'text-red-500' | 'text-emerald-500';
   _statusMessage: string;
 }
 
@@ -88,7 +88,7 @@ export default function CampaignPage() {
               ({ adaccount }: any) =>
                 ({
                   ...adaccount,
-                  _status: 'text-neutral-500',
+                  _status: 'text-neutral-400',
                   _statusMessage: '',
                 } as AdAccountWithAction),
             ),
