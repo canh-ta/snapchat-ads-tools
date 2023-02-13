@@ -4,9 +4,8 @@ import Layout from '@components/Layout';
 import gifSrc from '@public/media/select-ad-acc.gif';
 
 export default function ScriptPage() {
-  const code = `const cbs=document.querySelectorAll(".ant-dropdown .rc-checkbox-input");
-for(const cb of cbs)
-  cb.click();`;
+  const code =
+    '(()=>{const a=Array.from(document.querySelectorAll(".ant-dropdown .rc-checkbox-input")),b=prompt("Enter the part you want to select: start, end",`1,${a.length}`).split(",").map(c=>Number(c.trim()));if(!isNaN(b[0])&&!isNaN(b[1]))for(const c of a.slice(Math.max(b[0]-1,0),Math.min(b[1],a.length)))c&&c.click()})();';
 
   return (
     <Layout>
