@@ -109,7 +109,7 @@ export default function Header({ theme, onThemeChange }: Props) {
             {renderLinks}
           </ul>
         </div>
-        <a className="btn btn-ghost normal-case text-xl">Crishub</a>
+        <a className="btn btn-ghost normal-case text-xl">Just4tech</a>
       </div>
       <div className="navbar-center hidden lg:flex">
         <ul className="menu menu-horizontal px-1">{renderLinks}</ul>
