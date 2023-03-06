@@ -23,6 +23,7 @@ export default function AdAccountsPage() {
   const [isLoading, setLoading] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isAccLoading, setAccLoading] = useState(false);
+  const [sleep, setSleep] = useState(1);
   const [accounts, setAccounts] = useState<AdAccountWithAction[]>([]);
   const [billingCenters, setBillingCenters] = useState<BillingCenter[]>([]);
   const [fundingSources, setFundingSources] = useState<FundingSource[]>([]);
@@ -108,6 +109,10 @@ export default function AdAccountsPage() {
         });
     }
   }, [organizationID]);
+
+  async function onSleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms * 1000));
+  }
 
   const columns: Column<AdAccountWithAction>[] = useMemo(
     () => [
@@ -285,12 +290,14 @@ export default function AdAccountsPage() {
     if (synchronously === 'sync') {
       for await (const name of accountNames) {
         await createAccount({ ...payload, name });
+        await onSleep(sleep);
       }
     } else {
       await PromisePool.withConcurrency(parallel)
         .for(accountNames)
         .process(async (name: any) => {
           await createAccount({ ...payload, name });
+          await onSleep(sleep);
         });
     }
   };
@@ -311,6 +318,10 @@ export default function AdAccountsPage() {
 
   const onNumberChange = (event: any) => {
     setAccNumber(Number(event.target.value));
+  };
+
+  const onSleepChange = (event: any) => {
+    setSleep(Number(event.target.value));
   };
 
   const selectedOrgName = useMemo(() => {
@@ -446,6 +457,11 @@ export default function AdAccountsPage() {
             <span className="label-text">items in parallel.</span>
           </label>
         )}
+        <label className="cursor-pointer flex items-center gap-2 justify-left select-none">
+          <span className="label-text">Sleep</span>
+          <input type="number" value={sleep} onChange={onSleepChange} className="input input-bordered input-sm" />
+          <span className="label-text">seconds for each request.</span>
+        </label>
       </div>
     </div>
   );

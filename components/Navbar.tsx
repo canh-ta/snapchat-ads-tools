@@ -19,7 +19,16 @@ const menu: Link[] = [
   },
   {
     title: 'Campaigns',
-    link: '/tools/campaigns',
+    subLinks: [
+      {
+        title: 'Creation',
+        link: '/tools/campaigns/creation',
+      },
+      {
+        title: 'Deletion',
+        link: '/tools/campaigns/deletion',
+      },
+    ],
   },
   {
     title: 'Scripts',

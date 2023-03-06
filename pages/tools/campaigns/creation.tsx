@@ -35,6 +35,7 @@ export default function CampaignPage() {
   const { data: session } = useSession();
   const [synchronously, setSynchronously] = useState<'sync' | 'async'>('sync');
   const [parallel, setParallel] = useState<number>(5);
+  const [sleep, setSleep] = useState(1);
   const [isLoading, setLoading] = useState(false);
   const [isAccountLoading, setIsAccountLoading] = useState(false);
   const [accounts, setAccounts] = useState<AdAccountWithAction[]>([]);
@@ -284,12 +285,14 @@ export default function CampaignPage() {
     if (synchronously === 'sync') {
       for await (const ad_account_id of ad_account_ids) {
         await createCampaign({ ...campaignPayload, ad_account_id }, { ...adSquadPayload, ad_account_id });
+        await onSleep(sleep);
       }
     } else {
       await PromisePool.withConcurrency(parallel)
         .for(ad_account_ids)
-        .process(async (ad_account_id: any, index, pool) => {
+        .process(async (ad_account_id: any) => {
           await createCampaign({ ...campaignPayload, ad_account_id }, { ...adSquadPayload, ad_account_id });
+          await onSleep(sleep);
         });
     }
   };
@@ -385,6 +388,10 @@ export default function CampaignPage() {
     },
     [deleteAdSquad, deleteCampaign],
   );
+
+  async function onSleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms * 1000));
+  }
 
   const createAdSquad = useCallback(
     async (ad_account_id: string, payload: AdSquadCreateDTO): Promise<void> => {
@@ -540,6 +547,10 @@ export default function CampaignPage() {
     setParallel(Number(event.target.value));
   };
 
+  const onSleepChange = (event: any) => {
+    setSleep(Number(event.target.value));
+  };
+
   const disabledSubmit = useMemo(() => selectedFlatRows.length === 0, [selectedFlatRows]);
 
   const selectedOrgName = useMemo(() => {
@@ -572,6 +583,12 @@ export default function CampaignPage() {
             <span className="label-text">items in parallel.</span>
           </label>
         )}
+
+        <label className="cursor-pointer flex items-center gap-2 justify-left select-none">
+          <span className="label-text">Sleep</span>
+          <input type="number" value={sleep} onChange={onSleepChange} className="input input-bordered input-sm" />
+          <span className="label-text">seconds for each request.</span>
+        </label>
       </div>
     </div>
   );
@@ -747,6 +764,7 @@ export default function CampaignPage() {
       <Layout>
         <div className="flex border border-base-300 rounded-box items-center justify-between gap-4 p-4 m-4">
           <div className="text-xl">
+            <span>CAMPAIGN CREATION / </span>
             {isLoading
               ? 'Loading...'
               : organizationID
