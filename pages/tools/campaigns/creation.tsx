@@ -233,7 +233,7 @@ export default function CampaignPage() {
     const targeting: AdTargeting = {
       demographics: [{ min_age: ad_squad_age_min_age }],
       devices: [{}],
-      geos: [{ country_code: 'us' }],
+      geos: [{ country_code: 'us','de','fr','ca' }],
     };
 
     if (ad_squad_gender !== 'ALL') {
@@ -605,6 +605,7 @@ export default function CampaignPage() {
           <select className="select select-bordered select-sm" id="campaign_objective">
             <option value="WEB_CONVERSION">WEB CONVERSION</option>
             <option value="BRAND_AWARENESS">BRAND AWARENESS</option>
+            <option value="VIDEO_VIEWS">VIDEO VIEWS</option>
           </select>
         </div>
         <div className="flex flex-col">
