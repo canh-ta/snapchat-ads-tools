@@ -605,7 +605,7 @@ export default function CampaignPage() {
           <select className="select select-bordered select-sm" id="campaign_objective">
             <option value="WEB_CONVERSION">WEB CONVERSION</option>
             <option value="BRAND_AWARENESS">BRAND AWARENESS</option>
-            <option value="VIDEO_VIEWS">VIDEO VIEWS</option>
+            <option value="VIDEO_VIEW">VIDEO VIEWS</option>
           </select>
         </div>
         <div className="flex flex-col">
