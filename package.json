@@ -23,7 +23,7 @@
     "lodash": "^4.17.21",
     "luxon": "^3.2.1",
     "next": "13.1.6",
-    "next-auth": "^4.19.1",
+    "next-auth": "^4.20.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-table": "^7.8.0",
